@@ -1,0 +1,71 @@
+# Competency labels aligned to publicly described government procurement
+# activities. This is not the unpublished internal Procurement Competency
+# Framework. Replace the phrases below to load an official list.
+competencies:
+  - id: policy
+    label: Procurement policy and governance
+    phrases:
+      - procurement policy
+      - procurement governance
+      - procurement compliance
+      - government procurement
+      - procurement framework
+  - id: sourcing
+    label: Sourcing and tendering
+    phrases:
+      - strategic sourcing
+      - sourcing strategy
+      - tender
+      - tendering
+      - invitation to tender
+      - request for quotation
+      - request for proposal
+      - rfq
+      - rfp
+      - itt
+  - id: evaluation
+    label: Bid evaluation
+    phrases:
+      - bid evaluation
+      - tender evaluation
+      - evaluation of bids
+      - evaluation of tenders
+      - evaluation criteria
+  - id: contract
+    label: Contract management
+    phrases:
+      - contract management
+      - manage contracts
+      - managing contracts
+      - supplier contracts
+      - contract administration
+  - id: supplier
+    label: Supplier and vendor management
+    phrases:
+      - supplier management
+      - vendor management
+      - supplier relationship
+      - vendor relationship
+      - supplier performance
+  - id: category
+    label: Category management
+    phrases:
+      - category management
+      - category strategy
+      - category manager
+  - id: operations
+    label: Procurement operations
+    phrases:
+      - procurement operations
+      - purchase order
+      - purchasing
+      - procure goods
+      - procurement of
+  - id: systems
+    label: Procurement systems and data
+    phrases:
+      - gebiz
+      - e-procurement
+      - eprocurement
+      - procurement system
+      - procurement data

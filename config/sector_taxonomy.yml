@@ -1,0 +1,90 @@
+# Sector is assigned only with positive evidence from the title, duties,
+# field, functional area, or industry. Agency name is never used.
+# The winner must clear min_score and lead the runner-up by min_margin.
+min_score: 3
+min_margin: 2
+title_weight: 3
+body_weight: 1
+sectors:
+  - id: ict
+    label: ICT / Digital / Technology
+    keywords:
+      - ict
+      - infocomm
+      - software
+      - cybersecurity
+      - cyber security
+      - information technology
+      - digital service
+      - data centre
+      - data center
+      - cloud platform
+      - gebiz
+  - id: built
+    label: Built Environment / Infrastructure / Construction
+    keywords:
+      - built environment
+      - construction
+      - building works
+      - civil engineering
+      - building control
+      - campus infrastructure
+      - public housing
+  - id: healthcare
+    label: Healthcare
+    keywords:
+      - healthcare
+      - health care
+      - hospital
+      - clinical
+      - pharmaceutical
+      - medical device
+      - patient
+  - id: defence
+    label: Defence / Security
+    keywords:
+      - defence
+      - defense
+      - military
+      - weapon
+      - ammunition
+      - homeland security
+      - intelligence equipment
+  - id: professional
+    label: Professional Services
+    keywords:
+      - consultancy
+      - consulting services
+      - professional services
+      - legal services
+      - audit services
+      - advisory services
+  - id: facilities
+    label: Facilities / Estate
+    keywords:
+      - facilities management
+      - estate management
+      - hard services
+      - soft services
+      - building maintenance
+      - property management
+  - id: transport
+    label: Transport / Engineering
+    keywords:
+      - rail
+      - bus service
+      - land transport
+      - rolling stock
+      - maritime
+      - aviation
+      - traffic
+      - vehicle
+  - id: goods
+    label: General Goods & Services / Corporate
+    keywords:
+      - goods and services
+      - corporate services
+      - office supplies
+      - general procurement
+      - corporate procurement
+      - administrative procurement

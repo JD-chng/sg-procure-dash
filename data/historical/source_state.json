@@ -1,0 +1,8 @@
+{
+  "sha256": "c65e5a2b60f722d6ad21173eaee0c6c01b02b28836a6b2a2d7b483090395f441",
+  "throughDate": "2026-10-05",
+  "sourceRows": 2080,
+  "historySource": "upstream-replay",
+  "snapshotsUsed": 338,
+  "snapshotsSkipped": 0
+}

@@ -1,0 +1,4 @@
+Apache ECharts 5.5.1
+Copyright The Apache Software Foundation
+Licensed under the Apache License, Version 2.0
+https://github.com/apache/echarts

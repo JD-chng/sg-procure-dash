@@ -1,0 +1,23 @@
+# Career level is derived from explicit years, not job-title seniority.
+# Open-ended minima below 8 years, and ranges that cross bands, stay broad.
+bands:
+  early_min: 1
+  early_max: 3
+  mid_min: 4
+  mid_max: 7
+  senior_min: 8
+# Structured maxima at or above this value mean "no real ceiling".
+open_ended_max: 90
+labels:
+  entry: Fresh Graduate / Entry Level
+  early: Early Career
+  mid: Mid-Career
+  senior: Experienced / Senior
+  broad: Broad / No Clear Preference
+entry_phrases:
+  - fresh graduate
+  - fresh graduates
+  - no experience required
+  - no prior experience
+  - no working experience
+  - entry level

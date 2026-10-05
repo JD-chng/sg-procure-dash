@@ -1,0 +1,73 @@
+name: Refresh procurement dashboard
+
+on:
+  schedule:
+    # 08:30 UTC, Monday to Friday. That is 4:30pm Singapore time (UTC+8).
+    # GitHub may start the run later than the cron time.
+    - cron: "30 8 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      allow_row_drop:
+        description: "Allow a source row-count drop of more than half. Empty files still fail."
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: refresh-procurement-dashboard
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run unit tests
+        run: python -m pytest -q
+
+      - name: Process Careers@Gov extract
+        env:
+          ALLOW_ROW_DROP: ${{ github.event_name == 'workflow_dispatch' && inputs.allow_row_drop && 'true' || 'false' }}
+        run: python -m scripts.run_pipeline
+
+      - name: Commit changed data
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data docs/data
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No material change."
+          else
+            git commit -m "chore(data): refresh CareersGov data $(TZ=Asia/Singapore date +%F)"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload Pages artifact
+        if: steps.commit.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Deploy GitHub Pages
+        if: steps.commit.outputs.changed == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4

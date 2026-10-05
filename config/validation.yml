@@ -1,0 +1,33 @@
+# Daily runs reject an empty or suspiciously small Careers@Gov extract.
+min_rows: 500
+min_bytes: 100000
+max_drop_ratio: 0.5
+# Older upstream snapshots were smaller. Replay skips only clearly bad files.
+bootstrap_min_rows: 50
+required_columns:
+  - platform
+  - jobId
+  - postingNo
+  - jobTitle
+  - agency
+  - startDate
+  - closingDate
+  - employmentType
+  - experienceRequired
+  - experienceYearsMin
+  - experienceYearsMax
+  - field
+  - functionalArea
+  - industry
+  - jobDescription
+  - jobResponsibilities
+  - jobRequirements
+bootstrap_required_columns:
+  - jobId
+  - jobTitle
+internship_employment_types:
+  - internship
+  - traineeship
+insight_min_period_count: 5
+insight_min_change: 3
+median_min_sample: 10

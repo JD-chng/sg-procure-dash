@@ -1,0 +1,63 @@
+{
+  "processedThrough": "2026-10-05",
+  "processedAt": "2026-10-05T15:11:43+00:00",
+  "sourceUrl": "https://github.com/opengovsg/careersgovsg-jobs-data",
+  "sourceSha256": "c65e5a2b60f722d6ad21173eaee0c6c01b02b28836a6b2a2d7b483090395f441",
+  "sourceLastModified": "",
+  "sourceRows": 2080,
+  "historySource": "upstream-replay",
+  "coverageStart": "2026-02-09",
+  "coverageEnd": "2026-10-05",
+  "snapshotsUsed": 338,
+  "snapshotsSkipped": 0,
+  "runStats": {
+    "snapshot": {
+      "snapshotsUsed": 338,
+      "snapshotsSkipped": 0
+    },
+    "classification": {
+      "procurement": 1202,
+      "byBasis": {
+        "title": 299,
+        "field": 118,
+        "duty_phrase": 785
+      },
+      "sectorOther": 969,
+      "careerBroad": 17052,
+      "experienceParsed": 5229
+    }
+  },
+  "sectorLabels": [
+    "ICT / Digital / Technology",
+    "Built Environment / Infrastructure / Construction",
+    "Healthcare",
+    "Defence / Security",
+    "Professional Services",
+    "Facilities / Estate",
+    "Transport / Engineering",
+    "General Goods & Services / Corporate",
+    "Other / Unclassified"
+  ],
+  "careerLabels": [
+    "Fresh Graduate / Entry Level",
+    "Early Career",
+    "Mid-Career",
+    "Experienced / Senior",
+    "Broad / No Clear Preference"
+  ],
+  "competencyLabels": [
+    "Procurement policy and governance",
+    "Sourcing and tendering",
+    "Bid evaluation",
+    "Contract management",
+    "Supplier and vendor management",
+    "Category management",
+    "Procurement operations",
+    "Procurement systems and data"
+  ],
+  "insightMinPeriodCount": 5,
+  "insightMinChange": 3,
+  "medianMinSample": 10,
+  "procurementCount": 1202,
+  "currentlyListedCount": 74
+}

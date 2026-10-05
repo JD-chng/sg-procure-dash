@@ -1,0 +1,64 @@
+# Balanced procurement rule.
+# A job is included for a strong title, a Procurement field, a medium title
+# phrase, or a strong duty phrase. One boilerplate mention is not enough.
+high_title_terms:
+  - procurement
+  - purchasing
+  - strategic sourcing
+  - tendering
+medium_title_phrases:
+  - supplier management
+  - vendor management
+  - contract management
+  - category management
+  - commercial management
+  - supplier contracts
+# "Sourcing" in a title counts only beside another procurement term.
+sourcing_title_term: sourcing
+sourcing_companions:
+  - procurement
+  - purchasing
+  - tender
+  - tendering
+  - supplier
+  - vendor
+  - contract
+field_values:
+  - procurement
+# Searched in description, responsibilities, and requirements.
+duty_phrases:
+  - responsible for procurement
+  - responsible for the procurement
+  - lead procurement
+  - lead the procurement
+  - leading procurement
+  - leading the procurement
+  - manage procurement
+  - manage the procurement
+  - managing procurement
+  - managing the procurement
+  - oversee procurement
+  - overseeing procurement
+  - procurement activities
+  - procurement function
+  - procurement of
+  - tender management
+  - strategic sourcing
+  - manage supplier contracts
+  - managing supplier contracts
+  - supplier contracts
+  - end-to-end procurement
+  - end to end procurement
+# Applied unless the title or field is already high-confidence.
+veto_phrases:
+  - contract employee
+  - employment contract
+  - commercialisation
+  - commercialization
+  - commercial affairs
+weights:
+  high_title: 5
+  field: 5
+  medium_title: 3
+  sourcing_title: 3
+  duty_phrase: 4
