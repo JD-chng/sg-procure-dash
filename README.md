@@ -112,7 +112,7 @@ A single boilerplate mention of government procurement policy is not enough. Two
 
 The processed file records `procurementMatchScore`, `procurementMatchedTerms`, and `procurementMatchBasis` (`title`, `field`, or `duty_phrase`).
 
-On a recent extract this includes some roles whose main work is not procurement but whose duties mention buying goods or services. That is an accepted limit of the balanced rule. Tighten or extend the phrase lists in the YAML if you want a stricter cut.
+On a recent extract this includes some roles whose main work is not procurement but whose duties mention buying goods or services. That is an accepted limit of the balanced rule. The dashboard hides those duties-only matches until **Include roles matched only from the duties** is checked. The default population is core procurement: a procurement term in the title, or a Procurement field. Reset filters returns to that default.
 
 ### Sector
 

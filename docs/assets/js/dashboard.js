@@ -13,6 +13,7 @@
     competency: "",
     scope: "all",
     internships: false,
+    includeDuty: false,
     search: "",
     sortKey: "postingDate",
     sortDir: "desc",
@@ -52,6 +53,7 @@
   function passes(job, options) {
     const opts = options || {};
     if (!state.internships && job.internship) return false;
+    if (!state.includeDuty && job.matchBasis === "duty_phrase") return false;
     if (!opts.ignoreScope) {
       if (state.scope === "current" && !job.currentlyListed) return false;
       if (state.scope === "closed" && job.currentlyListed) return false;
@@ -382,8 +384,20 @@
     fillSelect("filter-competency", payload.metadata.competencyLabels || [], "All competencies");
   }
 
+  function renderPopulationNote() {
+    const jobs = payload.jobs || [];
+    const dutyOpen = jobs.filter((job) => job.matchBasis === "duty_phrase" && job.currentlyListed && (state.internships || !job.internship)).length;
+    const note = document.getElementById("population-note");
+    if (state.includeDuty) {
+      note.textContent = "Duties-only matches are included. " + dutyOpen + " of the open roles in that group were matched from the duties rather than the title or a Procurement field.";
+      return;
+    }
+    note.textContent = "Duties-only matches are hidden. Checking the box adds " + dutyOpen + " open roles that mention procurement only in the duties.";
+  }
+
   function render() {
     renderMeta();
+    renderPopulationNote();
     renderKpis();
     renderTrend();
     renderSector();
@@ -415,11 +429,13 @@
     state.competency = "";
     state.scope = "all";
     state.internships = false;
+    state.includeDuty = false;
     state.search = "";
     state.page = 1;
     document.getElementById("filters").reset();
     document.getElementById("filter-scope").value = "all";
     document.getElementById("filter-internships").checked = false;
+    document.getElementById("filter-duty").checked = false;
     document.getElementById("table-search").value = "";
     render();
   }
@@ -436,6 +452,7 @@
   bind("filter-competency", "competency");
   bind("filter-scope", "scope");
   bind("filter-internships", "internships");
+  bind("filter-duty", "includeDuty");
   document.getElementById("table-search").addEventListener("input", (event) => {
     state.search = event.target.value;
     state.page = 1;

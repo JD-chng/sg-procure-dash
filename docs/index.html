@@ -66,6 +66,7 @@
         </label>
       </form>
       <div class="checks">
+        <label><input id="filter-duty" type="checkbox"> Include roles matched only from the duties</label>
         <label><input id="filter-internships" type="checkbox"> Include internships and traineeships</label>
         <button class="reset" id="reset" type="button">Reset filters</button>
       </div>
@@ -76,7 +77,8 @@
       <p id="status" class="status" hidden></p>
       <section id="overview">
         <h2>Executive overview</h2>
-        <p class="lede">Counts follow the filters above. The first two cards always show both the full observed set and the roles still open, so a “currently hiring” filter does not hide the historical total.</p>
+        <p class="lede">The page starts on core procurement roles: the title contains a procurement term, or the source field is Procurement. Roles that only mention procurement in the duties stay out until that box is checked. The first two cards still show both the observed total and the roles still open.</p>
+        <p class="lede" id="population-note"></p>
         <div class="kpis" id="kpis"></div>
       </section>
       <section id="trend">
@@ -136,7 +138,7 @@
       </section>
       <section id="vacancies">
         <h2>Currently hiring</h2>
-        <p class="lede">Only postings still present on the latest Careers@Gov extract. This table ignores the listing-status filter and always shows open roles. A link can stop working after the posting closes.</p>
+        <p class="lede">Open roles in the population selected above. By default that is core procurement only. This table ignores the listing-status filter. A link can stop working after the posting closes.</p>
         <div class="table-tools">
           <label class="field">Search title or agency
             <input id="table-search" type="search" placeholder="Search open roles">
@@ -180,8 +182,10 @@
         <details class="help" open>
           <summary>How a number on this page is produced</summary>
           <dl>
-            <dt>Procurement role</dt>
-            <dd>Included when the title has a strong procurement term, the source field is Procurement, the title has a phrase such as contract management, or the duties use a phrase such as “manage procurement” or “procurement of”. A lone “tender” and “vendor” in the body is not enough. “Contract employee” is excluded.</dd>
+            <dt>Core procurement role</dt>
+            <dd>The title has a procurement term, or the source field or functional area is Procurement. This is the default population for every chart, card, and the open-roles table.</dd>
+            <dt>Duties-only match</dt>
+            <dd>The title and field are not procurement, but the duties contain a phrase such as “manage procurement” or “procurement of”. These roles are hidden until “Include roles matched only from the duties” is checked. A lone “tender” and “vendor” is still not enough, and “contract employee” stays excluded.</dd>
             <dt>Sector</dt>
             <dd>Keyword score on the title and duties. Agency name never assigns a sector. A tie or a weak score becomes Other / Unclassified.</dd>
             <dt>Career level</dt>
