@@ -350,7 +350,18 @@
       let kind = "flat";
       if (!enough) kind = "small";
       else if (Math.abs(points) >= meta.keywordTrendMinPoints) kind = points > 0 ? "up" : "down";
-      rows.set(k.id, { kind: kind, points: points, shareNow: Math.round(shareNow), shareBefore: Math.round(shareBefore), now: now.length, before: before.length });
+      rows.set(k.id, {
+        kind: kind,
+        points: points,
+        exactNow: shareNow,
+        exactBefore: shareBefore,
+        shareNow: Math.round(shareNow),
+        shareBefore: Math.round(shareBefore),
+        mentionsNow: a,
+        mentionsBefore: b,
+        now: now.length,
+        before: before.length,
+      });
     });
     return { pair: pair, rows: rows };
   }
@@ -387,21 +398,125 @@
     return "The procurement keyword mentioned most is " + top[0].label + ", in " + pct(top[1], pool.length) + "% of postings in view.";
   }
 
-  function changeCell(t) {
+  let lastTrends = null;
+
+  function tipButton(key, content, className, label) {
+    return '<button type="button" class="tip-target ' + (className || "") + '" data-tip="' + escapeHtml(key) + '" aria-describedby="tip"' +
+      (label ? ' aria-label="' + escapeHtml(label) + '"' : "") + ">" + content + "</button>";
+  }
+
+  function changeCell(k, t) {
     if (!t) return '<span class="muted">—</span>';
-    const title = escapeHtml(t.shareBefore + "% → " + t.shareNow + "% of new postings");
-    if (t.kind === "small") return '<span class="muted" title="Too few new postings in one of the quarters">—</span>';
-    if (t.kind === "flat") return '<span class="muted" title="' + title + '">steady</span>';
-    const arrow = t.kind === "up" ? "▲ +" : "▼ −";
-    return '<span class="delta-' + t.kind + '" title="' + title + '">' + arrow + Math.abs(t.points) + " pts</span>";
+    if (t.kind === "small") return tipButton("kw:" + k.id, "—", "muted", k.label + ": too few new postings to compare. Show how this is worked out.");
+    const shares = t.shareBefore + "% → " + t.shareNow + "%";
+    if (t.kind === "flat") return tipButton("kw:" + k.id, shares, "muted");
+    const arrow = t.kind === "up" ? "▲ " : "▼ ";
+    return tipButton("kw:" + k.id, arrow + shares, "delta-" + t.kind);
+  }
+
+  function oneDecimal(value) {
+    return (Math.round(value * 10) / 10).toFixed(1);
+  }
+
+  function tipContent(key) {
+    if (!lastTrends) return "";
+    const pair = lastTrends.pair;
+    const rule = "An arrow appears only when both quarters have at least " + meta.keywordTrendMinPostings +
+      " new postings and the share moves by at least " + meta.keywordTrendMinPoints + " percentage points. Smaller moves are left without an arrow.";
+    if (key === "head") {
+      if (!pair.prior) return "<p>" + escapeHtml(pair.reason || "No two complete quarters to compare yet.") + "</p>";
+      return "<strong>How this column is worked out</strong>" +
+        "<p>For each quarter, take the procurement postings first seen in that quarter (with the filters above, except period and keyword). The figure is the share of them whose text mentions the keyword: " +
+        escapeHtml(pair.prior.label) + " on the left, " + escapeHtml(pair.target.label) + " on the right.</p>" +
+        "<p>Shares are used rather than counts, so a busier quarter does not make every keyword look more in demand.</p>" +
+        "<p>" + escapeHtml(rule) + "</p>";
+    }
+    const id = key.replace(/^kw:/, "");
+    const k = keywordById(id);
+    const t = lastTrends.rows.get(id);
+    if (!k || !t) return "";
+    const line = (label, mentions, total, exact) =>
+      "<tr><th scope=\"row\">" + escapeHtml(label) + "</th><td>" + mentions + " of " + total + " new postings</td><td>" +
+      (total ? oneDecimal(exact) + "%" : "—") + "</td></tr>";
+    const diff = t.exactNow - t.exactBefore;
+    let verdict;
+    if (t.kind === "small") {
+      verdict = "Not compared: each quarter needs at least " + meta.keywordTrendMinPostings + " new postings in this view.";
+    } else if (t.kind === "flat") {
+      verdict = "The share moved by " + oneDecimal(Math.abs(diff)) + " percentage points, below the " + meta.keywordTrendMinPoints + "-point threshold, so no arrow is shown.";
+    } else {
+      verdict = "The share " + (t.kind === "up" ? "rose" : "fell") + " by " + oneDecimal(Math.abs(diff)) + " percentage points, so it is marked " + (t.kind === "up" ? "rising" : "falling") + ".";
+    }
+    return "<strong>" + escapeHtml(k.label) + "</strong>" +
+      '<table class="tip-table"><tbody>' +
+      line(pair.prior.label, t.mentionsBefore, t.before, t.exactBefore) +
+      line(pair.target.label, t.mentionsNow, t.now, t.exactNow) +
+      "</tbody></table>" +
+      "<p>" + escapeHtml(verdict) + "</p>" +
+      '<p class="tip-rule">' + escapeHtml(rule) + "</p>";
+  }
+
+  function showTip(target) {
+    const tip = $("tip");
+    const html = tipContent(target.getAttribute("data-tip"));
+    if (!html) return;
+    tip.innerHTML = html;
+    tip.hidden = false;
+    tip.dataset.for = target.getAttribute("data-tip");
+    const box = target.getBoundingClientRect();
+    const width = tip.offsetWidth;
+    const height = tip.offsetHeight;
+    let left = box.right - width;
+    left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+    let top = box.bottom + 6;
+    if (top + height > window.innerHeight - 8) top = Math.max(8, box.top - height - 6);
+    tip.style.left = left + "px";
+    tip.style.top = top + "px";
+  }
+
+  function hideTip() {
+    const tip = $("tip");
+    tip.hidden = true;
+    delete tip.dataset.for;
+  }
+
+  function bindTips() {
+    document.addEventListener("mouseover", (event) => {
+      const target = event.target.closest(".tip-target");
+      if (target) showTip(target);
+    });
+    document.addEventListener("mouseout", (event) => {
+      const target = event.target.closest(".tip-target");
+      if (target && !target.contains(event.relatedTarget)) hideTip();
+    });
+    document.addEventListener("focusin", (event) => {
+      const target = event.target.closest(".tip-target");
+      if (target) showTip(target);
+    });
+    document.addEventListener("focusout", (event) => {
+      if (event.target.closest(".tip-target")) hideTip();
+    });
+    document.addEventListener("click", (event) => {
+      const target = event.target.closest(".tip-target");
+      if (target) {
+        showTip(target);
+      } else if (!event.target.closest("#tip")) {
+        hideTip();
+      }
+    });
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape") hideTip(); });
+    window.addEventListener("scroll", hideTip, { passive: true });
   }
 
   function renderKeywords() {
     const pool = ignoringKeyword();
     const trends = keywordTrends();
-    const head = $("kw-change-head");
-    head.textContent = trends.pair.prior ? trends.pair.target.label.replace(/ \d{4}$/, "") + " vs " + trends.pair.prior.label : "Change";
-    head.title = trends.pair.prior ? "Change in the share of new postings that mention the keyword" : (trends.pair.reason || "");
+    lastTrends = trends;
+    hideTip();
+    const headLabel = trends.pair.prior
+      ? escapeHtml(trends.pair.prior.label.replace(/ \d{4}$/, "") + " → " + trends.pair.target.label)
+      : "Change";
+    $("kw-change-head").innerHTML = tipButton("head", headLabel + ' <span class="tip-icon" aria-hidden="true">?</span>', "head-tip", "How the quarter change is worked out");
     const rows = [];
     (meta.keywordGroups || []).forEach((group) => {
       rows.push('<tr class="group"><th colspan="6" scope="colgroup">' + escapeHtml(group.label) + "</th></tr>");
@@ -416,7 +531,7 @@
           '<td><div class="bar"><div class="bar-track"><div class="bar-fill" style="width:' + share + '%"></div></div><span class="bar-pct">' + share + "%</span></div></td>" +
           '<td class="num">' + matched.length + "</td>" +
           '<td class="num">' + open + "</td>" +
-          '<td class="num">' + changeCell(trends.rows.get(k.id)) + "</td>" +
+          '<td class="num">' + changeCell(k, trends.rows.get(k.id)) + "</td>" +
           '<td class="no-print"><a href="' + escapeHtml(k.file) + '" download>CSV<span class="sr-only"> of postings mentioning ' + escapeHtml(k.label) + "</span></a></td>" +
           "</tr>"
         );
@@ -903,6 +1018,7 @@
   }
 
   bindControls();
+  bindTips();
   fetch("data/dashboard_data.json")
     .then((response) => {
       if (!response.ok) throw new Error("Dashboard data is not available yet (" + response.status + ").");

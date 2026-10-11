@@ -175,7 +175,7 @@
           <dt>Contract type</dt>
           <dd>Taken from the source employment type. Mapping is in <code>config/dashboard.yml</code>.</dd>
           <dt>Keywords</dt>
-          <dd>Rule-based text matches, listed with their patterns in <code>config/keywords.yml</code> and <code>data/keywords/index.csv</code>. A posting counts once per keyword however often the word appears. Generic terms such as audit, stakeholders, and qualifications are searched only in the duties and requirements, so agency boilerplate in the description is not counted. The change column compares the share of new postings mentioning the keyword in two complete quarters. It shows a direction only when both quarters have at least <span data-meta="keywordTrendMinPostings"></span> new postings and the share moves by at least <span data-meta="keywordTrendMinPoints"></span> percentage points.</dd>
+          <dd>Rule-based text matches, listed with their patterns in <code>config/keywords.yml</code> and <code>data/keywords/index.csv</code>. A posting counts once per keyword however often the word appears. Generic terms such as audit, stakeholders, and qualifications are searched only in the duties and requirements, so agency boilerplate in the description is not counted. The change column shows the share of new postings mentioning the keyword in the earlier and the later of two complete quarters, for example “30% → 38%”. Hover over or tap a figure to see the counts behind it. It shows an arrow only when both quarters have at least <span data-meta="keywordTrendMinPostings"></span> new postings and the share moves by at least <span data-meta="keywordTrendMinPoints"></span> percentage points.</dd>
           <dt>Minimum experience</dt>
           <dd>The lowest years of experience stated on the posting, from the structured field or the requirement text.</dd>
           <dt>Sources and limits</dt>
@@ -189,6 +189,7 @@
       Public Careers@Gov postings as republished by OpenGovSG. No applicant or candidate information is held.
     </div>
   </footer>
+  <div id="tip" class="tip" role="tooltip" hidden></div>
   <script src="assets/vendor/echarts.min.js"></script>
   <script src="assets/js/dashboard.js"></script>
 </body>
