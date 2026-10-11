@@ -8,11 +8,16 @@ This repository does not hold applicant, résumé, or candidate information.
 
 ## What the dashboard answers
 
-- Which procurement roles are still open, and at which agencies?
-- How many procurement postings were newly observed each month and quarter?
-- Which sectors and career levels appear in demand?
-- Which competency phrases show up most often?
-- What do those counts imply for workforce planning, with the arithmetic shown?
+It is a one-glance page for a department head following procurement hiring across government.
+
+- How many procurement postings are there, how many are open now, and how many close this week?
+- Is hiring picking up? New postings per quarter, compared with the previous quarter. Year-on-year turns on automatically once there is a full year of complete quarters.
+- Which agencies hire the most procurement staff?
+- What do agencies ask for in the job text (GeBIZ, contract management, analytics, sustainability, and so on), and is that changing?
+- How many roles offer no permanent option, and how much experience is asked for?
+- Which postings are behind each number? Every posting links to Careers@Gov and can be expanded to show the full archived text with the matched keywords highlighted.
+
+One status toggle (All, Open now, Closed) and the period, agency, and keyword filters drive every number, chart, sentence, and the table. **Print summary** prints the summary on one A4 landscape page, with the keyword table on a second page.
 
 ## Architecture
 
@@ -22,7 +27,9 @@ Careers@Gov
   -> GitHub Actions, weekdays 4:30pm Singapore time
   -> Python: validate, update history, classify
   -> data/historical/jobs_history.csv
-  -> docs/data/dashboard_data.json
+  -> docs/data/dashboard_data.json   numbers and tags for the page
+  -> docs/data/job_text.json         full posting text, loaded on demand
+  -> docs/data/keywords/*.csv        one cross-reference list per keyword
   -> GitHub Pages
 ```
 
@@ -49,6 +56,12 @@ Later refreshes only pull the current file:
 
 ```bash
 python -m scripts.run_pipeline
+```
+
+After editing anything in `config/`, rebuild every output from the stored history without downloading. First-seen, last-seen, and listing status are not touched.
+
+```bash
+python -m scripts.rebuild_outputs
 ```
 
 Serve the site from `docs/` so the JSON loads. Opening `index.html` as a file will not work.
@@ -95,7 +108,37 @@ Dates in the pipeline use Asia/Singapore, not the UTC clock on the runner.
 
 ## Classification
 
-Rules live in `config/` and are loaded at runtime. You can change them without editing Python. After a change, run `python -m scripts.run_pipeline` or the GitHub Action. Invalid YAML fails the run before it replaces the dashboard.
+Rules live in `config/` and are loaded at runtime. You can change them without editing Python. After a change, run `python -m scripts.rebuild_outputs`, or let the next GitHub Action run pick it up. Invalid YAML or an invalid keyword pattern fails the run before it replaces the dashboard.
+
+### Keywords
+
+`config/keywords.yml`
+
+Each keyword has an id, a label, one or more regular expressions (case-insensitive, `\b` for word boundaries), and the parts of the posting to search: `title`, `responsibilities`, `requirements`, `description`. Generic terms common to most government postings (audit and compliance, stakeholder management, qualifications) are marked `generic`, are searched only in the duties and requirements, and are listed last.
+
+Every run writes:
+
+- `docs/data/keywords/<id>.csv`: every procurement posting that mentions the keyword, open and closed. Columns include status, whether it is a core or duties-only match, agency, title, contract type, minimum years, dates, the words matched, where they matched, a snippet around the first match, the posting link, and the full text of each part where the keyword appeared. Files are UTF-8 with a byte-order mark so Excel opens them cleanly.
+- `docs/data/keywords/index.csv`: every keyword with its patterns, where it is searched, and its counts.
+
+The files are rebuilt from the full history each run and committed, so git history shows how each list changed. They are also linked from the dashboard. A keyword removed from the config has its file deleted on the next run.
+
+The **Change** column compares the share of new postings that mention a keyword in two complete quarters. It shows a direction only when both quarters have enough new postings and the share moves by enough percentage points (`keyword_trend` in `config/dashboard.yml`).
+
+### Dashboard rules
+
+`config/dashboard.yml`
+
+- Contract type mapping from the source employment type, and which labels count as “no permanent option”.
+- Minimum-experience bands.
+- Closing-soon window (7 days).
+- When a quarter change is called an increase or decrease: both quarters need at least 5 postings, and the gap must be at least 3 postings and 10%.
+
+Quarters are calendar quarters. A quarter is compared only when every day of it is inside the history. The first quarter of history (from 9 February 2026) and the current quarter (“to date”) are shown but not compared.
+
+### Minimum experience
+
+`experienceStatedMinYears` is the highest minimum the posting states anywhere: “at least 3 years” in the requirements outranks a structured 0–8 range. The description is read only when the requirements are empty, values above 20 are ignored (“over 50 years of service”), and a posting labelled Entry level counts as 0.
 
 ### Procurement relevance
 
@@ -112,9 +155,13 @@ A single boilerplate mention of government procurement policy is not enough. Two
 
 The processed file records `procurementMatchScore`, `procurementMatchedTerms`, and `procurementMatchBasis` (`title`, `field`, or `duty_phrase`).
 
-On a recent extract this includes some roles whose main work is not procurement but whose duties mention buying goods or services. That is an accepted limit of the balanced rule. The dashboard hides those duties-only matches until **Include roles matched only from the duties** is checked. The default population is core procurement: a procurement term in the title, or a Procurement field. Reset filters returns to that default.
+On a recent extract this includes some roles whose main work is not procurement but whose duties mention buying goods or services. That is an accepted limit of the balanced rule. The dashboard hides those duties-only matches until **More options → Include roles that mention procurement only in the duties** is checked. The default population is core procurement: a procurement term in the title, or a Procurement field. Reset returns to that default.
 
-### Sector
+### Sector, career level, and competencies (data files only)
+
+These classifiers still run and their columns stay in `data/processed/procurement_jobs.csv`, but they are no longer shown on the dashboard. Over 90% of core roles came out as Other / Unclassified for sector and Broad for career level, so the charts said little. The keyword table and the minimum-experience bands replace them.
+
+#### Sector
 
 `config/sector_taxonomy.yml`
 
@@ -122,7 +169,7 @@ Sectors: ICT / Digital / Technology, Built Environment / Infrastructure / Constr
 
 The title and duties must clear a score, and the winner must lead the next sector by a set margin. Agency name is never used. Uncertain roles stay Other / Unclassified.
 
-### Career level
+#### Career level
 
 `config/experience_rules.yml`
 
@@ -136,11 +183,11 @@ Level is taken from explicit years, not from words like “senior” in the titl
 | A narrow range of 8 or more years, “8+ years”, or “minimum 8 years” | Experienced / Senior |
 | No usable text, structured 0–0 without an entry label, a range that crosses bands, a wide open ceiling such as 3–99, or “at least 3 years” | Broad / No Clear Preference |
 
-Structured 0–0 is common in the source even for experienced titles. Those rows stay broad unless the text says entry level. The career-level section also shows the stated minimum years so the floor is visible when the band is broad.
+Structured 0–0 is common in the source even for experienced titles. Those rows stay broad unless the text says entry level.
 
 A range that sits entirely inside one band keeps that band. A range that crosses a band boundary does not get forced into the lower band.
 
-### Competencies
+#### Competencies
 
 `config/pcf_competencies.yml`
 
@@ -148,7 +195,7 @@ These labels follow procurement activities described in public material: policy 
 
 ### Internships
 
-Internships and traineeships stay in the data. Overview charts hide them until **Include internships and traineeships** is turned on. The employment types are listed in `config/validation.yml`.
+Internships and traineeships stay in the data. The dashboard hides them until **More options → Include internships and traineeships** is turned on. The employment types are listed in `config/validation.yml`.
 
 ## History
 
@@ -167,11 +214,13 @@ Each run:
 - keeps a key that disappeared, sets currently listed to false, and leaves last-seen on the last day it was present
 - if that key returns, sets currently listed back to true, moves last-seen forward, keeps first-seen, and increments `relistCount`
 
-Full description text is stored for procurement matches and near-misses. Other rows keep the title, agency, dates, and listing status so the file does not grow with every unrelated description.
+Full description text is stored for procurement matches and near-misses. Other rows keep the title, agency, dates, and listing status so the file does not grow with every unrelated description. Text is the latest version seen; an edit made while a posting is open replaces the earlier text, which remains in git history.
+
+`startDate`, `closingDate`, and `postingDate` are plain `YYYY-MM-DD` dates in Singapore time. The source's year-9999 “no closing date” value is stored as blank.
 
 `daysListed` is the observed span from first-seen to last-seen, including any gap while a posting was down. It is not the official advertisement lifetime.
 
-The hiring trend counts a posting in the month it was **first observed**, and only inside snapshot coverage. In the first covered month, a posting counts only when its posting date is in that same month. Roles that were already open on the first snapshot, with older posting dates, stay in the historical total and stay out of that first bar.
+The hiring trend counts a posting in the month or quarter it was **first observed**, and only inside snapshot coverage. In the first covered month, a posting counts only when its posting date is in that same month. Roles that were already open on the first snapshot, with older posting dates, stay in the historical total and stay out of that first bar. The line on the same chart counts postings first seen on or before the last day of each period and still listed that day.
 
 ### Replaying older snapshots
 
@@ -187,7 +236,8 @@ Example, to treat “head of procurement” in the duties as a match, add that l
 
 ## Data limits
 
-- Classification is a heuristic. Review `procurementMatchedTerms` in `data/processed/procurement_jobs.csv` before using a cut as a target.
+- Classification is a heuristic. Review `procurementMatchedTerms` in `data/processed/procurement_jobs.csv`, or the keyword CSVs, before using a cut as a target.
+- Keyword counts depend on how agencies word postings. A keyword absent from a posting does not mean the skill is not needed.
 - Jobs that opened and closed between snapshots, or before the upstream repository existed, are missing.
 - Counting by posting date alone would treat long-lived vacancies as hiring in old months. The trend does not do that.
 - Closed vacancy links can return a Careers@Gov “not found” page.
@@ -196,12 +246,13 @@ Example, to treat “head of procurement” in the duties as a match, add that l
 ## Project layout
 
 ```text
-config/                  classification and validation rules
-scripts/                 download, history, classifiers, dashboard JSON, bootstrap
+config/                  classification, keyword, dashboard, and validation rules
+scripts/                 download, history, classifiers, keywords, dashboard JSON, bootstrap, rebuild
 data/raw/latest.csv      last accepted source file
 data/historical/         persistent posting table and source checksum
 data/processed/          procurement rows only
 docs/                    static site published by GitHub Pages
+docs/data/keywords/      one CSV per keyword, plus index.csv
 tests/                   parser, history, and validation tests
 .github/workflows/       weekday refresh and Pages deploy
 ```
@@ -212,4 +263,4 @@ tests/                   parser, history, and validation tests
 python -m pytest -q
 ```
 
-Tests do not download the source file. They cover composite keys, history (including a posting that leaves and returns), the balanced procurement rule, the contract-employee exclusion, experience phrases, broad ranges, weak sector scores, empty files, and timestamp parsing.
+Tests do not download the source file. They cover composite keys, history (including a posting that leaves and returns), plain-date archiving, the balanced procurement rule, the contract-employee exclusion, experience phrases and stated minimums, broad ranges, weak sector scores, keyword matching and keyword files, contract and experience bands, partial quarters and the year-on-year start, empty files, and timestamp parsing.

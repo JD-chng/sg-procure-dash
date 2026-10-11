@@ -24,6 +24,12 @@
   let payload = null;
   let meta = {};
   const charts = {};
+  const expanded = new Set();
+  let textData = null;
+  let textFailed = false;
+  let textPromise = null;
+  const haystacks = new Map();
+  const regexCache = new Map();
 
   const $ = (id) => document.getElementById(id);
 
@@ -296,10 +302,17 @@
       }
     }
 
-    const agencyCounts = Array.from(countBy(jobs, (job) => job.agency).entries()).sort((a, b) => b[1] - a[1]);
-    if (agencyCounts.length) {
-      const [name, count] = agencyCounts[0];
-      lines.push(name + " has the most postings in view: " + count + " (" + pct(count, jobs.length) + "%).");
+    if (!state.agency) {
+      const agencyCounts = Array.from(countBy(jobs, (job) => job.agency).entries()).sort((a, b) => b[1] - a[1]);
+      if (agencyCounts.length) {
+        const [name, count] = agencyCounts[0];
+        const runnerUp = agencyCounts[1] ? agencyCounts[1][1] : 0;
+        if (count >= 2 && count > runnerUp) {
+          lines.push(name + " has the most postings in view: " + count + " (" + pct(count, jobs.length) + "%).");
+        } else {
+          lines.push("Postings are spread across " + plural(agencyCounts.length, "agency", "agencies") + ", with no single agency ahead (at most " + count + " each).");
+        }
+      }
     }
 
     const keywordLine = keywordInsight();
@@ -343,6 +356,17 @@
   }
 
   function keywordInsight() {
+    if (state.keyword) {
+      const selected = keywordById(state.keyword);
+      const jobs = inView();
+      if (!selected || !jobs.length) return "";
+      const companion = allKeywords()
+        .filter((k) => !k.generic && k.id !== state.keyword)
+        .map((k) => [k, jobs.filter((job) => job.keywords.includes(k.id)).length])
+        .sort((a, b) => b[1] - a[1])[0];
+      if (!companion || !companion[1]) return "";
+      return "Of postings mentioning " + selected.label + ", " + pct(companion[1], jobs.length) + "% also mention " + companion[0].label + ".";
+    }
     const trends = keywordTrends();
     const specific = allKeywords().filter((k) => !k.generic);
     const movers = specific
@@ -573,10 +597,119 @@
     return rows;
   }
 
+  // ---------- Job text (loaded after first paint) ----------
+
+  function loadText() {
+    if (!textPromise) {
+      updateSearchNote();
+      textPromise = fetch("data/job_text.json")
+        .then((response) => {
+          if (!response.ok) throw new Error(String(response.status));
+          return response.json();
+        })
+        .then((data) => {
+          textData = data;
+          haystacks.clear();
+        })
+        .catch(() => { textFailed = true; })
+        .then(() => {
+          updateSearchNote();
+          renderTable(inView());
+        });
+    }
+    return textPromise;
+  }
+
+  function updateSearchNote() {
+    $("search-note").textContent = textData
+      ? "Searches titles, agencies and job text."
+      : textFailed
+        ? "Job text could not be loaded, so only titles and agencies are searched."
+        : "Loading job text; titles and agencies are searched meanwhile.";
+  }
+
+  function haystack(job) {
+    if (!haystacks.has(job.jobKey)) {
+      const text = textData && textData[job.jobKey];
+      const body = text ? " " + text.responsibilities + " " + text.requirements + " " + text.description : "";
+      const value = (job.jobTitle + " " + job.agency + body).toLowerCase();
+      if (!textData) return value;
+      haystacks.set(job.jobKey, value);
+    }
+    return haystacks.get(job.jobKey);
+  }
+
+  function keywordRegexes(id) {
+    if (!regexCache.has(id)) {
+      const k = keywordById(id);
+      const list = [];
+      (k ? k.patterns : []).forEach((pattern) => {
+        try { list.push(new RegExp(pattern, "gi")); } catch (error) { /* pattern not valid in the browser; skip highlight */ }
+      });
+      regexCache.set(id, list);
+    }
+    return regexCache.get(id);
+  }
+
+  function highlight(text, regexes) {
+    const ranges = [];
+    regexes.forEach((re) => {
+      re.lastIndex = 0;
+      let match;
+      while ((match = re.exec(text))) {
+        if (!match[0]) { re.lastIndex += 1; continue; }
+        ranges.push([match.index, match.index + match[0].length]);
+      }
+    });
+    ranges.sort((a, b) => a[0] - b[0]);
+    let out = "";
+    let cursor = 0;
+    ranges.forEach(([start, end]) => {
+      if (start < cursor) start = cursor;
+      if (end <= start) return;
+      out += escapeHtml(text.slice(cursor, start)) + "<mark>" + escapeHtml(text.slice(start, end)) + "</mark>";
+      cursor = end;
+    });
+    return out + escapeHtml(text.slice(cursor));
+  }
+
+  function detailHtml(job) {
+    const ids = job.keywords.slice().sort((a, b) => (b === state.keyword) - (a === state.keyword));
+    const chips = ids.length
+      ? '<div class="chips">' + ids.map((id) => '<span class="chip">' + escapeHtml((keywordById(id) || { label: id }).label) + "</span>").join("") + "</div>"
+      : '<p class="muted small">No tracked keywords in this posting.</p>';
+    let body;
+    const text = textData && textData[job.jobKey];
+    if (!textData && !textFailed) {
+      body = '<p class="muted">Loading job text…</p>';
+    } else if (!text) {
+      body = '<p class="muted">The job text is not available for this posting.</p>';
+    } else {
+      const all = ids.flatMap(keywordRegexes);
+      const snippets = ids.filter((id) => text.snippets && text.snippets[id]).map((id) =>
+        "<li><b>" + escapeHtml(keywordById(id).label) + "</b>" + highlight(text.snippets[id], keywordRegexes(id)) + "</li>");
+      const sections = [["Responsibilities", text.responsibilities], ["Requirements", text.requirements], ["Description", text.description]]
+        .filter(([, value]) => value)
+        .map(([label, value]) => "<details><summary>" + label + "</summary><p>" + highlight(value, all) + "</p></details>");
+      body = (snippets.length ? "<h4>Where the keywords appear</h4><ul class=\"snips\">" + snippets.join("") + "</ul>" : "") +
+        (sections.length ? '<h4>Full text</h4><div class="fulltext">' + sections.join("") + "</div>" : "");
+    }
+    const facts = [
+      ["First seen", fmtDate(job.firstSeen)],
+      ["Last seen", fmtDate(job.lastSeen)],
+      ["Days tracked", job.daysListed == null ? "—" : String(job.daysListed)],
+      ["Relisted", job.relistCount ? plural(job.relistCount, "time") : "No"],
+      ["Employment type", job.employmentType || "Not stated"],
+      ["Matched on", job.matchBasis === "duty_phrase" ? "Duties only" : job.matchBasis === "field" ? "Procurement field" : "Job title"],
+    ];
+    return '<div class="detail-grid"><div>' + "<h4>Keywords</h4>" + chips + body + "</div>" +
+      '<div><h4>Tracking</h4><dl class="facts">' + facts.map(([k, v]) => "<dt>" + k + "</dt><dd>" + escapeHtml(v) + "</dd>").join("") + "</dl></div></div>";
+  }
+
   function tableRows(jobs) {
     const query = state.search.trim().toLowerCase();
     let rows = jobs.slice();
-    if (query) rows = rows.filter((job) => (job.jobTitle + " " + job.agency).toLowerCase().includes(query));
+    if (query) rows = rows.filter((job) => haystack(job).includes(query));
     return sortRows(rows);
   }
 
@@ -589,21 +722,25 @@
     if (!slice.length) {
       body.innerHTML = '<tr><td colspan="7">No postings match these filters.</td></tr>';
     } else {
-      body.innerHTML = slice.map((job) => {
+      body.innerHTML = slice.map((job, index) => {
+        const isExpanded = expanded.has(job.jobKey);
+        const detailId = "detail-" + ((state.page - 1) * PAGE_SIZE + index);
+        const toggle = '<button type="button" class="toggle" data-expand="' + escapeHtml(job.jobKey) + '" aria-expanded="' + isExpanded + '" aria-controls="' + detailId + '">Details</button>';
+        const detail = isExpanded ? '<tr class="detail" id="' + detailId + '"><td colspan="7">' + detailHtml(job) + "</td></tr>" : "";
         const link = job.url
           ? '<a href="' + escapeHtml(job.url) + '" target="_blank" rel="noopener noreferrer">View posting<span class="sr-only"> for ' + escapeHtml(job.jobTitle) + "</span></a>"
           : "No link";
         const badge = job.open ? '<span class="badge open">Open</span>' : '<span class="badge closed">Closed</span>';
         const years = job.experienceMinYears == null ? "—" : String(job.experienceMinYears);
         return "<tr>" +
-          '<td class="role"><strong>' + escapeHtml(job.jobTitle) + "</strong><span>" + escapeHtml(job.agency) + "</span></td>" +
+          '<td class="role"><strong>' + escapeHtml(job.jobTitle) + "</strong><span>" + escapeHtml(job.agency) + "</span><br>" + toggle + "</td>" +
           "<td>" + badge + "</td>" +
           "<td>" + escapeHtml(job.contractType) + "</td>" +
           "<td>" + years + "</td>" +
           '<td class="nowrap">' + escapeHtml(fmtDate(job.postingDate)) + "</td>" +
           '<td class="nowrap">' + closesText(job) + "</td>" +
           '<td class="nowrap">' + link + "</td>" +
-          "</tr>";
+          "</tr>" + detail;
       }).join("");
     }
     $("table-count").textContent = plural(rows.length, "posting");
@@ -669,6 +806,7 @@
     renderShareBars("chart-contract", meta.contractLabels || [], jobs, (job) => job.contractType);
     renderShareBars("chart-experience", meta.experienceBands || [], jobs, (job) => job.experienceBand);
     renderTable(jobs);
+    scheduleSnapshot();
   }
 
   function resetFilters() {
@@ -692,7 +830,7 @@
   function bindControls() {
     bindSegmented("data-status", "status", render);
     bindSegmented("data-compare", "compare", render);
-    bindSegmented("data-interval", "interval", () => renderTrend(inView()));
+    bindSegmented("data-interval", "interval", () => { renderTrend(inView()); scheduleSnapshot(); });
     $("kw-body").addEventListener("click", (event) => {
       const button = event.target.closest("[data-keyword]");
       if (!button) return;
@@ -707,6 +845,17 @@
     });
     $("reset").addEventListener("click", resetFilters);
     $("table-search").addEventListener("input", (event) => { state.search = event.target.value; state.page = 1; renderTable(inView()); });
+    $("table-search").addEventListener("focus", loadText);
+    $("job-body").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-expand]");
+      if (!button) return;
+      const key = button.getAttribute("data-expand");
+      if (expanded.has(key)) expanded.delete(key);
+      else { expanded.add(key); loadText(); }
+      renderTable(inView());
+      const again = document.querySelector('[data-expand="' + CSS.escape(key) + '"]');
+      if (again) again.focus();
+    });
     $("page-prev").addEventListener("click", () => { state.page -= 1; renderTable(inView()); });
     $("page-next").addEventListener("click", () => { state.page += 1; renderTable(inView()); });
     document.querySelectorAll("[data-sort]").forEach((button) => {
@@ -721,20 +870,29 @@
       });
     });
     $("print").addEventListener("click", () => window.print());
-    window.addEventListener("resize", () => Object.values(charts).forEach((c) => c.resize()));
-    window.addEventListener("beforeprint", sizeChartsForPrint);
-    window.addEventListener("afterprint", () => Object.values(charts).forEach((c) => c.resize()));
+    window.addEventListener("resize", () => { Object.values(charts).forEach((c) => c.resize()); scheduleSnapshot(); });
+    window.addEventListener("beforeprint", snapshotCharts);
   }
 
-  // Charts draw at a fixed pixel size, so they are resized to the A4 landscape column width before printing.
-  function sizeChartsForPrint() {
-    const pageWidth = 1040;
-    const column = Math.floor((pageWidth - 6) / 2) - 20;
+  // Canvas charts keep their screen size when printed, so each one gets an image copy that print CSS scales to fit.
+  function snapshotCharts() {
     Object.entries(charts).forEach(([id, c]) => {
-      const short = $(id).classList.contains("short");
-      const wide = $(id).closest(".card.wide");
-      c.resize({ width: wide ? pageWidth - 20 : column, height: short ? 125 : 165 });
+      const node = $(id);
+      let img = node.nextElementSibling;
+      if (!img || !img.classList.contains("print-img")) {
+        img = document.createElement("img");
+        img.className = "print-img";
+        img.alt = node.getAttribute("aria-label") || "";
+        node.after(img);
+      }
+      img.src = c.getDataURL({ pixelRatio: 2, backgroundColor: "#ffffff" });
     });
+  }
+
+  let snapshotTimer = null;
+  function scheduleSnapshot() {
+    window.clearTimeout(snapshotTimer);
+    snapshotTimer = window.setTimeout(snapshotCharts, 400);
   }
 
   function showStatus(message) {
@@ -757,6 +915,8 @@
       populateFilters();
       syncControls();
       render();
+      updateSearchNote();
+      window.setTimeout(loadText, 600);
     })
     .catch((error) => {
       showStatus(error.message + " Run the processing pipeline, then reload this page.");

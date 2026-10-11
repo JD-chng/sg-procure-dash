@@ -55,7 +55,13 @@ groups:
     keywords:
       - id: sustainability
         label: Sustainability / green procurement
-        patterns: ['\bsustainab\w*', '\bgreen procurement\b', '\bgreen (?:public )?procurement\b']
+        # Environmental meaning only: "fiscal sustainability" or "operates sustainably" do not count.
+        patterns:
+          - '(?<!fiscal )(?<!financial )(?<!solution )\bsustainability\b'
+          - '\bsustainable (?:procurement|purchasing|sourcing|development|practices)\b'
+          - '\benvironmental(?:ly)? (?:sustainab\w*|friendly|impact|considerations)\b'
+          - '\bgreen (?:public )?(?:procurement|government|plan|buildings?|technolog\w*)\b'
+          - '\b(?:carbon|net[- ]zero|climate|decarboni[sz]\w*)\b'
       - id: value-for-money
         label: Value for money / cost savings
         patterns: ['\bvalue for money\b', '\bcost (?:savings?|reductions?|avoidance)\b']
