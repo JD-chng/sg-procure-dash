@@ -5,9 +5,10 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from scripts.common import clean, load_yaml, month_key, parse_date_any, parse_iso, quarter_key
+from scripts.keywords import Hit, Keyword
 
 
-def slim_job(record: dict, rules: dict) -> dict:
+def slim_job(record: dict, rules: dict, keyword_ids: list[str] | None = None) -> dict:
     first = parse_iso(record.get("firstSeenDate"))
     min_years = _optional_int(record.get("experienceMinYears"))
     in_trend = record.get("inTrend") == "true"
@@ -30,12 +31,47 @@ def slim_job(record: dict, rules: dict) -> dict:
         "contractType": contract_type(record.get("employmentType"), rules),
         "experienceMinYears": min_years,
         "experienceBand": experience_band(min_years, rules),
-        "internship": _is_internship(record),
+        "internship": is_internship(record),
         "matchBasis": record.get("procurementMatchBasis", ""),
         "inTrend": in_trend,
         "trendMonth": month_key(first) if in_trend and first else "",
         "trendQuarter": quarter_key(first) if in_trend and first else "",
+        "keywords": keyword_ids or [],
     }
+
+
+def build_text_payload(records: list[dict], hits: dict[str, dict[str, Hit]]) -> dict:
+    """Full posting text, loaded by the page only when a row is opened or text is searched."""
+    out = {}
+    for record in records:
+        key = record.get("job_key", "")
+        out[key] = {
+            "responsibilities": record.get("responsibilities", ""),
+            "requirements": record.get("requirements", ""),
+            "description": record.get("description", ""),
+            "snippets": {kid: hit.snippet for kid, hit in hits.get(key, {}).items()},
+        }
+    return out
+
+
+def keyword_metadata(keywords: list[Keyword]) -> list[dict]:
+    groups: list[dict] = []
+    for keyword in keywords:
+        if not groups or groups[-1]["id"] != keyword.group_id:
+            groups.append({"id": keyword.group_id, "label": keyword.group_label, "keywords": []})
+        groups[-1]["keywords"].append(
+            {
+                "id": keyword.id,
+                "label": keyword.label,
+                "generic": keyword.generic,
+                "fields": keyword.fields,
+                "patterns": keyword.patterns,
+                "file": f"data/keywords/{keyword.id}.csv",
+            }
+        )
+    specific = [g for g in groups if not all(k["generic"] for k in g["keywords"])]
+    generic = [g for g in groups if all(k["generic"] for k in g["keywords"])]
+    return specific + generic
 
 
 def contract_type(value: object, rules: dict) -> str:
@@ -133,7 +169,7 @@ def _internship_types() -> set[str]:
     return {item.lower() for item in rules.get("internship_employment_types", [])}
 
 
-def _is_internship(record: dict) -> bool:
+def is_internship(record: dict) -> bool:
     employment = clean(record.get("employmentType")).lower()
     title = clean(record.get("jobTitle")).lower()
     if employment in _INTERNSHIP_TYPES:
@@ -148,10 +184,13 @@ def build_payload(
     records: dict[str, dict],
     *,
     metadata: dict,
+    hits: dict[str, dict[str, Hit]] | None = None,
+    keywords: list[Keyword] | None = None,
 ) -> dict:
     rules = load_yaml("dashboard.yml")
+    hits = hits or {}
     jobs = [
-        slim_job(record, rules)
+        slim_job(record, rules, list(hits.get(record.get("job_key", ""), {})))
         for record in records.values()
         if record.get("procurementRelevant") == "true"
     ]
@@ -177,6 +216,7 @@ def build_payload(
             "keywordTrendMinPostings": int(keyword_trend.get("min_quarter_postings", 10)),
             "keywordTrendMinPoints": float(keyword_trend.get("min_change_points", 5)),
             "topAgencies": int(rules.get("top_agencies", 10)),
+            "keywordGroups": keyword_metadata(keywords or []),
             "procurementCount": len(jobs),
             "currentlyListedCount": sum(1 for job in jobs if job["open"]),
         },

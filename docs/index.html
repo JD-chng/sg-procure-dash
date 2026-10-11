@@ -36,6 +36,9 @@
         <label class="field">Agency
           <select id="filter-agency"><option value="">All agencies</option></select>
         </label>
+        <label class="field">Keyword
+          <select id="filter-keyword"><option value="">Any keyword</option></select>
+        </label>
         <details class="more">
           <summary>More options</summary>
           <div class="more-body">
@@ -83,6 +86,28 @@
           <h3>Agencies hiring most</h3>
           <p class="note">Postings in view, open and closed. Select a bar to show only that agency.</p>
           <div id="chart-agency" class="chart" role="img" aria-label="Agencies with the most procurement postings"></div>
+        </article>
+        <article class="card wide" id="keywords">
+          <div class="card-head">
+            <h3>What agencies ask for</h3>
+            <a class="download-all no-print" href="data/keywords/index.csv" download>Keyword list (CSV)</a>
+          </div>
+          <p class="note">Share of postings in view whose text mentions each keyword. Select a keyword to filter the rest of the page. Each list opens in Excel with the matching postings, the words found, and the text around them.</p>
+          <div class="table-wrap kw-wrap">
+            <table class="kw">
+              <thead>
+                <tr>
+                  <th scope="col">Keyword</th>
+                  <th scope="col" class="kw-bar-col">Share of postings</th>
+                  <th scope="col" class="num">Postings</th>
+                  <th scope="col" class="num">Open</th>
+                  <th scope="col" class="num" id="kw-change-head">Change</th>
+                  <th scope="col" class="no-print">List</th>
+                </tr>
+              </thead>
+              <tbody id="kw-body"></tbody>
+            </table>
+          </div>
         </article>
         <article class="card">
           <h3>Contract type</h3>
@@ -148,6 +173,8 @@
           <dd>Open postings whose closing date is within <span data-meta="closingSoonDays"></span> days of the last processed day. Some postings have no closing date.</dd>
           <dt>Contract type</dt>
           <dd>Taken from the source employment type. Mapping is in <code>config/dashboard.yml</code>.</dd>
+          <dt>Keywords</dt>
+          <dd>Rule-based text matches, listed with their patterns in <code>config/keywords.yml</code> and <code>data/keywords/index.csv</code>. A posting counts once per keyword however often the word appears. Generic terms such as audit, stakeholders, and qualifications are searched only in the duties and requirements, so agency boilerplate in the description is not counted. The change column compares the share of new postings mentioning the keyword in two complete quarters. It shows a direction only when both quarters have at least <span data-meta="keywordTrendMinPostings"></span> new postings and the share moves by at least <span data-meta="keywordTrendMinPoints"></span> percentage points.</dd>
           <dt>Minimum experience</dt>
           <dd>The lowest years of experience stated on the posting, from the structured field or the requirement text.</dd>
           <dt>Sources and limits</dt>

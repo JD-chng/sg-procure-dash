@@ -40,10 +40,15 @@ def write_history(path: Path, records: dict[str, dict]) -> None:
     temporary.replace(path)
 
 
-def write_json(path: Path, payload: dict) -> None:
+def write_json(path: Path, payload: dict, *, compact: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".partial")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    text = (
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+        if compact
+        else json.dumps(payload, ensure_ascii=False, indent=2)
+    )
+    temporary.write_text(text, encoding="utf-8")
     temporary.replace(path)
 
 

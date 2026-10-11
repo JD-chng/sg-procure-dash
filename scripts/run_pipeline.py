@@ -8,12 +8,20 @@ import sys
 from datetime import date, datetime
 from pathlib import Path
 
-from scripts.build_dashboard_data import build_payload, coverage_start_from
+from scripts.build_dashboard_data import (
+    build_payload,
+    build_text_payload,
+    contract_type,
+    coverage_start_from,
+    is_internship,
+)
 from scripts.classify_jobs import classify_records
 from scripts.common import (
     DOCS_DATA,
     DOCS_META,
+    DOCS_TEXT,
     HISTORY_CSV,
+    KEYWORD_DIR,
     PROCESSED_CSV,
     RAW_CSV,
     SOURCE_URL,
@@ -24,6 +32,7 @@ from scripts.common import (
 )
 from scripts.download_jobs import download_jobs
 from scripts.io_store import read_history, read_json, read_source_csv, write_history, write_json
+from scripts.keywords import load_keywords, match_record, write_keyword_files
 from scripts.update_history import apply_snapshot, finalize_records
 from scripts.validate_source import ValidationError, validate_rows
 
@@ -133,6 +142,8 @@ def _write_outputs(
     snapshots_used: int | None,
     snapshots_skipped: int | None,
 ) -> None:
+    keywords = load_keywords()
+    rules = load_yaml("dashboard.yml")
     write_history(HISTORY_CSV, records)
     procurement_rows = {
         key: value
@@ -154,9 +165,20 @@ def _write_outputs(
         "snapshotsSkipped": snapshots_skipped,
         "runStats": {"snapshot": snapshot_stats, "classification": class_stats},
     }
-    payload = build_payload(records, metadata=metadata)
+    relevant = list(procurement_rows.values())
+    hits = {record["job_key"]: match_record(record, keywords) for record in relevant}
+    payload = build_payload(records, metadata=metadata, hits=hits, keywords=keywords)
     write_json(DOCS_DATA, payload)
     write_json(DOCS_META, payload["metadata"])
+    write_json(DOCS_TEXT, build_text_payload(relevant, hits), compact=True)
+    write_keyword_files(
+        KEYWORD_DIR,
+        relevant,
+        hits,
+        keywords,
+        contract_of=lambda record: contract_type(record.get("employmentType"), rules),
+        internship_of=is_internship,
+    )
     write_json(
         STATE_JSON,
         {

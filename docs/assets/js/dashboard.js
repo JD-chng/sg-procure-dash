@@ -11,6 +11,7 @@
     status: "all",
     period: "",
     agency: "",
+    keyword: "",
     includeDuty: false,
     internships: false,
     interval: "quarter",
@@ -69,12 +70,33 @@
     return kind === "q" ? job.firstQuarter === key : job.firstMonth === key;
   }
 
+  function passesKeyword(job) {
+    return !state.keyword || job.keywords.includes(state.keyword);
+  }
+
   function inView() {
-    return payload.jobs.filter((job) => passesBase(job) && passesStatus(job) && passesPeriod(job));
+    return payload.jobs.filter((job) => passesBase(job) && passesKeyword(job) && passesStatus(job) && passesPeriod(job));
   }
 
   function ignoringPeriod() {
+    return payload.jobs.filter((job) => passesBase(job) && passesKeyword(job) && passesStatus(job));
+  }
+
+  // The keyword table shows every keyword for the other filters, so it ignores the keyword filter.
+  function ignoringKeyword() {
+    return payload.jobs.filter((job) => passesBase(job) && passesStatus(job) && passesPeriod(job));
+  }
+
+  function ignoringKeywordAndPeriod() {
     return payload.jobs.filter((job) => passesBase(job) && passesStatus(job));
+  }
+
+  function allKeywords() {
+    return (meta.keywordGroups || []).flatMap((group) => group.keywords);
+  }
+
+  function keywordById(id) {
+    return allKeywords().find((k) => k.id === id) || null;
   }
 
   function countBy(jobs, keyFn) {
@@ -177,6 +199,7 @@
       period ? "first seen in " + escapeHtml(periodLabel(period)) : "since " + escapeHtml(fmtDate(meta.coverageStart)),
     ];
     if (state.agency) parts.push("at " + escapeHtml(state.agency));
+    if (state.keyword && keywordById(state.keyword)) parts.push("mentioning " + escapeHtml(keywordById(state.keyword).label));
     const extra = [];
     if (state.includeDuty) extra.push("including duties-only matches");
     if (state.internships) extra.push("including internships");
@@ -279,6 +302,9 @@
       lines.push(name + " has the most postings in view: " + count + " (" + pct(count, jobs.length) + "%).");
     }
 
+    const keywordLine = keywordInsight();
+    if (keywordLine) lines.push(keywordLine);
+
     const np = noPermanentShare(jobs);
     const bands = countBy(jobs.filter((job) => job.experienceBand !== "Not stated"), (job) => job.experienceBand);
     const topBand = Array.from(bands.entries()).sort((a, b) => b[1] - a[1])[0];
@@ -289,6 +315,97 @@
       lines.push(text);
     }
     $("changes").innerHTML = lines.map((line) => "<li>" + escapeHtml(line) + "</li>").join("");
+  }
+
+  // ---------- Keywords ----------
+
+  // Share of new postings mentioning each keyword in the comparison quarters.
+  function keywordTrends() {
+    const pair = comparisonPair();
+    if (!pair.prior) return { pair: pair, rows: new Map() };
+    const pool = ignoringKeywordAndPeriod().filter((job) => job.inTrend);
+    const now = pool.filter((job) => job.trendQuarter === pair.target.key);
+    const before = pool.filter((job) => job.trendQuarter === pair.prior.key);
+    const enough = now.length >= meta.keywordTrendMinPostings && before.length >= meta.keywordTrendMinPostings;
+    const rows = new Map();
+    allKeywords().forEach((k) => {
+      const a = now.filter((job) => job.keywords.includes(k.id)).length;
+      const b = before.filter((job) => job.keywords.includes(k.id)).length;
+      const shareNow = now.length ? (a / now.length) * 100 : 0;
+      const shareBefore = before.length ? (b / before.length) * 100 : 0;
+      const points = Math.round(shareNow - shareBefore);
+      let kind = "flat";
+      if (!enough) kind = "small";
+      else if (Math.abs(points) >= meta.keywordTrendMinPoints) kind = points > 0 ? "up" : "down";
+      rows.set(k.id, { kind: kind, points: points, shareNow: Math.round(shareNow), shareBefore: Math.round(shareBefore), now: now.length, before: before.length });
+    });
+    return { pair: pair, rows: rows };
+  }
+
+  function keywordInsight() {
+    const trends = keywordTrends();
+    const specific = allKeywords().filter((k) => !k.generic);
+    const movers = specific
+      .map((k) => ({ k: k, t: trends.rows.get(k.id) }))
+      .filter((item) => item.t && (item.t.kind === "up" || item.t.kind === "down"))
+      .sort((a, b) => Math.abs(b.t.points) - Math.abs(a.t.points));
+    if (movers.length) {
+      const { k, t } = movers[0];
+      return "Mentions of " + k.label + " " + (t.kind === "up" ? "rose" : "fell") + " from " + t.shareBefore + "% of new postings in " +
+        trends.pair.prior.label + " to " + t.shareNow + "% in " + trends.pair.target.label + ".";
+    }
+    const pool = ignoringKeyword();
+    if (!pool.length) return "";
+    const top = specific
+      .map((k) => [k, pool.filter((job) => job.keywords.includes(k.id)).length])
+      .sort((a, b) => b[1] - a[1])[0];
+    if (!top || !top[1]) return "";
+    return "The procurement keyword mentioned most is " + top[0].label + ", in " + pct(top[1], pool.length) + "% of postings in view.";
+  }
+
+  function changeCell(t) {
+    if (!t) return '<span class="muted">—</span>';
+    const title = escapeHtml(t.shareBefore + "% → " + t.shareNow + "% of new postings");
+    if (t.kind === "small") return '<span class="muted" title="Too few new postings in one of the quarters">—</span>';
+    if (t.kind === "flat") return '<span class="muted" title="' + title + '">steady</span>';
+    const arrow = t.kind === "up" ? "▲ +" : "▼ −";
+    return '<span class="delta-' + t.kind + '" title="' + title + '">' + arrow + Math.abs(t.points) + " pts</span>";
+  }
+
+  function renderKeywords() {
+    const pool = ignoringKeyword();
+    const trends = keywordTrends();
+    const head = $("kw-change-head");
+    head.textContent = trends.pair.prior ? trends.pair.target.label.replace(/ \d{4}$/, "") + " vs " + trends.pair.prior.label : "Change";
+    head.title = trends.pair.prior ? "Change in the share of new postings that mention the keyword" : (trends.pair.reason || "");
+    const rows = [];
+    (meta.keywordGroups || []).forEach((group) => {
+      rows.push('<tr class="group"><th colspan="6" scope="colgroup">' + escapeHtml(group.label) + "</th></tr>");
+      group.keywords.forEach((k) => {
+        const matched = pool.filter((job) => job.keywords.includes(k.id));
+        const share = pct(matched.length, pool.length);
+        const open = matched.filter((job) => job.open).length;
+        const active = state.keyword === k.id;
+        rows.push(
+          '<tr class="' + (k.generic ? "generic" : "") + (active ? " active" : "") + '">' +
+          '<td><button type="button" class="kw-pick" data-keyword="' + escapeHtml(k.id) + '" aria-pressed="' + active + '">' + escapeHtml(k.label) + "</button></td>" +
+          '<td><div class="bar"><div class="bar-track"><div class="bar-fill" style="width:' + share + '%"></div></div><span class="bar-pct">' + share + "%</span></div></td>" +
+          '<td class="num">' + matched.length + "</td>" +
+          '<td class="num">' + open + "</td>" +
+          '<td class="num">' + changeCell(trends.rows.get(k.id)) + "</td>" +
+          '<td class="no-print"><a href="' + escapeHtml(k.file) + '" download>CSV<span class="sr-only"> of postings mentioning ' + escapeHtml(k.label) + "</span></a></td>" +
+          "</tr>"
+        );
+      });
+    });
+    $("kw-body").innerHTML = rows.join("");
+  }
+
+  function setKeyword(id) {
+    state.keyword = id;
+    state.page = 1;
+    $("filter-keyword").value = id;
+    render();
   }
 
   // ---------- Charts ----------
@@ -511,6 +628,10 @@
     period.innerHTML = '<option value="">All time</option><optgroup label="Quarters">' + quarterOptions + '</optgroup><optgroup label="Months">' + monthOptions + "</optgroup>";
     const agencies = Array.from(new Set(payload.jobs.map((job) => job.agency).filter(Boolean))).sort((a, b) => a.localeCompare(b));
     $("filter-agency").innerHTML = '<option value="">All agencies</option>' + agencies.map((a) => '<option value="' + escapeHtml(a) + '">' + escapeHtml(a) + "</option>").join("");
+    $("filter-keyword").innerHTML = '<option value="">Any keyword</option>' + (meta.keywordGroups || []).map((group) =>
+      '<optgroup label="' + escapeHtml(group.label) + '">' +
+      group.keywords.map((k) => '<option value="' + escapeHtml(k.id) + '">' + escapeHtml(k.label) + "</option>").join("") +
+      "</optgroup>").join("");
     const yearButton = $("compare-year");
     if (!yoyAvailable()) {
       yearButton.disabled = true;
@@ -531,6 +652,7 @@
     setPressed("[data-compare]", "data-compare", state.compare);
     $("filter-period").value = state.period;
     $("filter-agency").value = state.agency;
+    $("filter-keyword").value = state.keyword;
     $("filter-duty").checked = state.includeDuty;
     $("filter-internships").checked = state.internships;
     $("table-search").value = state.search;
@@ -543,13 +665,14 @@
     renderChanges(jobs);
     renderTrend(jobs);
     renderAgencies(jobs);
+    renderKeywords();
     renderShareBars("chart-contract", meta.contractLabels || [], jobs, (job) => job.contractType);
     renderShareBars("chart-experience", meta.experienceBands || [], jobs, (job) => job.experienceBand);
     renderTable(jobs);
   }
 
   function resetFilters() {
-    Object.assign(state, { status: "all", period: "", agency: "", includeDuty: false, internships: false, search: "", sortKey: "", sortDir: "desc", page: 1 });
+    Object.assign(state, { status: "all", period: "", agency: "", keyword: "", includeDuty: false, internships: false, search: "", sortKey: "", sortDir: "desc", page: 1 });
     syncControls();
     render();
   }
@@ -570,7 +693,13 @@
     bindSegmented("data-status", "status", render);
     bindSegmented("data-compare", "compare", render);
     bindSegmented("data-interval", "interval", () => renderTrend(inView()));
-    [["filter-period", "period"], ["filter-agency", "agency"]].forEach(([id, key]) => {
+    $("kw-body").addEventListener("click", (event) => {
+      const button = event.target.closest("[data-keyword]");
+      if (!button) return;
+      const id = button.getAttribute("data-keyword");
+      setKeyword(state.keyword === id ? "" : id);
+    });
+    [["filter-period", "period"], ["filter-agency", "agency"], ["filter-keyword", "keyword"]].forEach(([id, key]) => {
       $(id).addEventListener("change", (event) => { state[key] = event.target.value; state.page = 1; render(); });
     });
     [["filter-duty", "includeDuty"], ["filter-internships", "internships"]].forEach(([id, key]) => {

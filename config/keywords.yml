@@ -1,0 +1,104 @@
+# Keywords counted in procurement postings.
+#
+# patterns: regular expressions, case-insensitive. \b marks a word boundary.
+# fields:   where to look. Any of title, responsibilities, requirements, description.
+#           The description often holds agency boilerplate, so generic terms skip it.
+# generic:  true for terms common to most government postings. They are shown
+#           below the procurement-specific groups.
+#
+# Each keyword also gets docs/data/keywords/<id>.csv listing every matching posting.
+# After editing, run: python -m scripts.rebuild_outputs
+
+default_fields: [title, responsibilities, requirements, description]
+
+groups:
+  - id: process
+    label: Procurement process
+    keywords:
+      - id: tender-rfq
+        label: Tender / RFQ / quotation
+        patterns: ['\btenders?\b', '\btendering\b', '\brfqs?\b', '\bquotations?\b', '\binvitation to quote\b']
+      - id: contract-management
+        label: Contract management
+        patterns: ['\bcontracts? management\b', '\bcontract administration\b', '\bmanag\w* (?:\w+ ){0,2}contracts\b']
+      - id: negotiation
+        label: Negotiation
+        patterns: ['\bnegotiat\w*']
+      - id: strategic-sourcing
+        label: Strategic sourcing
+        patterns: ['\bstrategic (?:sourcing|procurement)\b']
+      - id: supplier-management
+        label: Supplier / vendor management
+        patterns: ['\b(?:supplier|vendor)s? (?:performance|management|relationships?|evaluation)\b']
+      - id: category-management
+        label: Category management
+        patterns: ['\bcategory management\b', '\bcategory (?:manager|strategy|strategies|plans?)\b']
+
+  - id: systems
+    label: Systems and tools
+    keywords:
+      - id: gebiz
+        label: GeBIZ
+        patterns: ['\bgebiz\b']
+      - id: data-analytics
+        label: Data analytics / dashboards
+        patterns: ['\bdata analytics\b', '\banalytics\b', '\bpower ?bi\b', '\btableau\b', '\bdashboards?\b', '\bspend analysis\b']
+      - id: excel
+        label: Excel
+        patterns: ['\bexcel\b']
+      - id: sap-erp
+        label: SAP / ERP
+        patterns: ['\bsap\b', '\berp\b']
+
+  - id: priorities
+    label: Governance and priorities
+    keywords:
+      - id: sustainability
+        label: Sustainability / green procurement
+        patterns: ['\bsustainab\w*', '\bgreen procurement\b', '\bgreen (?:public )?procurement\b']
+      - id: value-for-money
+        label: Value for money / cost savings
+        patterns: ['\bvalue for money\b', '\bcost (?:savings?|reductions?|avoidance)\b']
+      - id: audit-compliance
+        label: Audit and compliance
+        generic: true
+        fields: [responsibilities, requirements]
+        patterns: ['\baudits?\b', '\bcompliance\b']
+
+  - id: buying
+    label: What they buy
+    keywords:
+      - id: construction-works
+        label: Construction / works
+        patterns: ['\bconstruction\b', '\bbuilding works\b', '\bcivil (?:works|engineering)\b']
+      - id: ict-technology
+        label: ICT / technology
+        patterns: ['\bict\b', '\bsoftware\b', '\bcloud\b', '\bcyber\w*', '\bit (?:systems|services|products|procurement)\b']
+
+  - id: qualifications
+    label: Qualifications
+    generic: true
+    keywords:
+      - id: degree
+        label: Degree
+        fields: [requirements]
+        patterns: ['\bdegree\b', '\bbachelor\w*']
+      - id: cips-certification
+        label: CIPS / professional certification
+        fields: [requirements]
+        patterns: ['\bm?cips\b', '\bcpsm\b', '\bcpm\b', '\bprofessional (?:\w+ ){0,2}certifi\w*', '\bprocurement certifi\w*']
+      - id: diploma
+        label: Diploma
+        fields: [requirements]
+        patterns: ['\bdiploma\b']
+
+  - id: people
+    label: People skills
+    generic: true
+    keywords:
+      - id: stakeholder-management
+        label: Stakeholder management
+        fields: [responsibilities, requirements]
+        patterns:
+          - '\bstakeholder (?:management|engagement|relations\w*)\b'
+          - '\b(?:engag|manag|liais|collaborat)\w* (?:closely )?(?:with )?(?:\w+ ){0,4}stakeholders\b'

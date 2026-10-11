@@ -195,6 +195,23 @@ td.nowrap { white-space: nowrap; }
 .soon { color: var(--warn); font-weight: 600; }
 .pager { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
 
+.download-all { font-size: 0.86rem; }
+.kw-wrap { border-radius: 8px; margin: 0.3rem 0 0.4rem; }
+table.kw { font-size: 0.88rem; }
+table.kw th, table.kw td { padding: 0.32rem 0.6rem; vertical-align: middle; }
+table.kw .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+table.kw tr.group th { background: #f3efe6; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+table.kw tr.generic td { color: var(--muted); }
+table.kw tr.active td { background: var(--accent-soft); }
+.kw-bar-col { width: 34%; }
+.kw-pick { background: none; border: 0; padding: 0; cursor: pointer; color: var(--accent); text-align: left; text-decoration: underline; text-decoration-color: #b8c9cd; text-underline-offset: 2px; }
+.kw-pick[aria-pressed="true"] { font-weight: 650; text-decoration-color: var(--accent); }
+.bar { display: flex; align-items: center; gap: 0.5rem; }
+.bar-track { flex: 1; height: 0.6rem; background: #ece7dc; border-radius: 999px; overflow: hidden; min-width: 4rem; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+tr.generic .bar-fill { background: #9aa8ad; }
+.bar-pct { width: 2.6rem; text-align: right; font-variant-numeric: tabular-nums; }
+
 .help { margin-top: 1.4rem; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 0.7rem 0.9rem; }
 .help summary { cursor: pointer; color: var(--accent); font-weight: 600; }
 .help dl { display: grid; grid-template-columns: minmax(140px, 210px) 1fr; gap: 0.4rem 0.9rem; margin: 0.8rem 0 0.2rem; font-size: 0.92rem; }
@@ -238,4 +255,9 @@ footer { border-top: 1px solid var(--line); color: var(--muted); font-size: 0.86
   .card p.note { font-size: 9px; margin: 0; }
   .chart { height: 165px !important; }
   .chart.short { height: 125px !important; }
+  #keywords { order: 10; break-before: page; }
+  #keywords .note { font-size: 9px; }
+  table.kw { font-size: 10px; }
+  table.kw th, table.kw td { padding: 1px 6px; }
+  .kw-pick { color: var(--ink); text-decoration: none; }
 }
