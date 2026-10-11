@@ -3,162 +3,123 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Government procurement hiring</title>
+  <title>Procurement hiring across government</title>
   <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
   <header class="site">
-    <div class="wrap">
-      <h1>Government procurement hiring</h1>
-      <p>Workforce-planning view of procurement roles on Careers@Gov. Figures come from the public OpenGovSG job extract, kept after a posting closes, and classified with published rules rather than a model.</p>
-      <div class="meta-row" id="meta-row">
-        <span>Loading the latest extract…</span>
+    <div class="wrap header-row">
+      <div>
+        <h1>Procurement hiring across government</h1>
+        <p>Procurement roles advertised on Careers@Gov, tracked daily and kept after they close.</p>
+        <div class="meta-row" id="meta-row"><span>Loading the latest extract…</span></div>
       </div>
+      <button type="button" class="ghost print-btn" id="print">Print summary</button>
     </div>
   </header>
-  <div class="filters">
+
+  <div class="filters" id="filter-bar">
     <div class="wrap">
-      <nav class="nav" aria-label="Sections">
-        <a href="#overview">Overview</a>
-        <a href="#trend">Trend</a>
-        <a href="#sector">Sector</a>
-        <a href="#career">Career level</a>
-        <a href="#agency">Agency</a>
-        <a href="#vacancies">Currently hiring</a>
-        <a href="#insights">Insights</a>
-        <a href="#definitions">Definitions</a>
-      </nav>
-      <form id="filters" class="filter-grid">
-        <label class="field">Year
-          <select id="filter-year" name="year"><option value="">All years</option></select>
-        </label>
-        <label class="field">Quarter
-          <select id="filter-quarter" name="quarter"><option value="">All quarters</option></select>
-        </label>
-        <label class="field">Month
-          <select id="filter-month" name="month"><option value="">All months</option></select>
-        </label>
-        <label class="field">Posted from
-          <input id="filter-from" name="from" type="date">
-        </label>
-        <label class="field">Posted to
-          <input id="filter-to" name="to" type="date">
+      <form id="filters" class="filter-row" onsubmit="return false">
+        <div class="field">
+          <span id="status-label">Status</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="status-label">
+            <button type="button" role="radio" data-status="all" aria-checked="true">All</button>
+            <button type="button" role="radio" data-status="open" aria-checked="false">Open now</button>
+            <button type="button" role="radio" data-status="closed" aria-checked="false">Closed</button>
+          </div>
+        </div>
+        <label class="field">Period first seen
+          <select id="filter-period"><option value="">All time</option></select>
         </label>
         <label class="field">Agency
-          <select id="filter-agency" name="agency"><option value="">All agencies</option></select>
+          <select id="filter-agency"><option value="">All agencies</option></select>
         </label>
-        <label class="field">Sector
-          <select id="filter-sector" name="sector"><option value="">All sectors</option></select>
-        </label>
-        <label class="field">Career level
-          <select id="filter-career" name="career"><option value="">All levels</option></select>
-        </label>
-        <label class="field">Competency
-          <select id="filter-competency" name="competency"><option value="">All competencies</option></select>
-        </label>
-        <label class="field">Listing status
-          <select id="filter-scope" name="scope">
-            <option value="all">All observed</option>
-            <option value="current">Currently hiring only</option>
-            <option value="closed">No longer listed</option>
-          </select>
-        </label>
+        <details class="more">
+          <summary>More options</summary>
+          <div class="more-body">
+            <label><input id="filter-duty" type="checkbox"> Include roles that mention procurement only in the duties</label>
+            <label><input id="filter-internships" type="checkbox"> Include internships and traineeships</label>
+          </div>
+        </details>
+        <button class="reset" id="reset" type="button">Reset</button>
       </form>
-      <div class="checks">
-        <label><input id="filter-duty" type="checkbox"> Include roles matched only from the duties</label>
-        <label><input id="filter-internships" type="checkbox"> Include internships and traineeships</label>
-        <button class="reset" id="reset" type="button">Reset filters</button>
-      </div>
+      <p class="scope" id="scope" aria-live="polite"></p>
     </div>
   </div>
+
   <main id="content">
     <div class="wrap">
       <p id="status" class="status" hidden></p>
-      <section id="overview">
-        <h2>Executive overview</h2>
-        <p class="lede">The page starts on core procurement roles: the title contains a procurement term, or the source field is Procurement. Roles that only mention procurement in the duties stay out until that box is checked. The first two cards still show both the observed total and the roles still open.</p>
-        <p class="lede" id="population-note"></p>
+
+      <section id="summary" aria-label="Summary">
         <div class="kpis" id="kpis"></div>
+        <article class="card changed">
+          <div class="card-head">
+            <h2>What changed</h2>
+            <div class="segmented small" role="radiogroup" aria-label="Compare with">
+              <button type="button" role="radio" data-compare="quarter" aria-checked="true">vs previous quarter</button>
+              <button type="button" role="radio" data-compare="year" aria-checked="false" id="compare-year">vs same quarter last year</button>
+            </div>
+          </div>
+          <ul class="changes" id="changes"></ul>
+        </article>
       </section>
-      <section id="trend">
-        <h2>Hiring trend</h2>
-        <p class="lede">Each bar is a procurement posting first observed in that period. The first month of snapshot coverage counts a posting only when its posting date is in that same month, so roles already open on day one are not drawn as a spike. Months before coverage are omitted.</p>
-        <div class="card">
-          <div class="toolbar" role="group" aria-label="Trend interval">
-            <button type="button" id="mode-month" aria-pressed="true">Monthly</button>
-            <button type="button" id="mode-quarter" aria-pressed="false">Quarterly</button>
+
+      <section class="grid-2" aria-label="Charts">
+        <article class="card">
+          <div class="card-head">
+            <h3>Hiring over time</h3>
+            <div class="segmented small" role="radiogroup" aria-label="Trend interval">
+              <button type="button" role="radio" data-interval="quarter" aria-checked="true">Quarterly</button>
+              <button type="button" role="radio" data-interval="month" aria-checked="false">Monthly</button>
+            </div>
           </div>
-          <div id="chart-trend" class="chart" role="img" aria-label="Procurement postings by observation period"></div>
-        </div>
+          <p class="note">Bars: postings first seen in the period. Line: postings still open at the end of it. Paler bars are partial periods.</p>
+          <div id="chart-trend" class="chart" role="img" aria-label="New and open procurement postings over time"></div>
+        </article>
+        <article class="card">
+          <h3>Agencies hiring most</h3>
+          <p class="note">Postings in view, open and closed. Select a bar to show only that agency.</p>
+          <div id="chart-agency" class="chart" role="img" aria-label="Agencies with the most procurement postings"></div>
+        </article>
+        <article class="card">
+          <h3>Contract type</h3>
+          <p class="note">As stated by the agency. Fixed term and contract roles offer no permanent route.</p>
+          <div id="chart-contract" class="chart short" role="img" aria-label="Postings by contract type"></div>
+        </article>
+        <article class="card">
+          <h3>Minimum experience asked</h3>
+          <p class="note">The lowest number of years stated on the posting. Many agencies state 0 even for senior roles.</p>
+          <div id="chart-experience" class="chart short" role="img" aria-label="Postings by minimum years of experience"></div>
+        </article>
       </section>
-      <section id="sector">
-        <h2>Procurement sector</h2>
-        <p class="lede">A sector is assigned only when the title or duties name it clearly. Weak or tied evidence stays in Other / Unclassified. Agency name is not used.</p>
-        <div class="grid-2">
-          <div class="card">
-            <h3>Roles by sector</h3>
-            <div id="chart-sector" class="chart" role="img" aria-label="Procurement roles by sector"></div>
+
+      <section id="jobs" class="no-print">
+        <div class="section-head">
+          <h2>Postings</h2>
+          <div class="table-tools">
+            <label class="field search">Search
+              <input id="table-search" type="search" placeholder="Title or agency">
+            </label>
+            <span id="table-count" class="muted"></span>
           </div>
-          <div class="card">
-            <h3>Sector trend</h3>
-            <p class="note">Observation month, same coverage rule as the hiring trend.</p>
-            <div id="chart-sector-trend" class="chart" role="img" aria-label="Sector trend over time"></div>
-          </div>
-        </div>
-      </section>
-      <section id="career">
-        <h2>Career level</h2>
-        <p class="lede">Level comes from the stated years of experience. A wide range, an open-ended minimum below eight years, or a missing requirement stays Broad / No Clear Preference. Bare zero years are not treated as entry level unless the posting says so.</p>
-        <div class="grid-2">
-          <div class="card">
-            <h3>Career level</h3>
-            <div id="chart-career" class="chart short" role="img" aria-label="Career level distribution"></div>
-          </div>
-          <div class="card">
-            <h3>Stated minimum years</h3>
-            <p class="note">The floor written on the posting, including roles left as Broad.</p>
-            <div id="chart-years" class="chart short" role="img" aria-label="Distribution of stated minimum years"></div>
-          </div>
-        </div>
-      </section>
-      <section id="agency">
-        <h2>Agency analysis</h2>
-        <p class="lede">Agencies with the most procurement postings in the current filter. Choose an agency above to limit every chart to that employer.</p>
-        <div class="grid-2">
-          <div class="card">
-            <h3>Hiring volume</h3>
-            <div id="chart-agency" class="chart" role="img" aria-label="Agencies by procurement posting volume"></div>
-          </div>
-          <div class="card">
-            <h3>Currently open, by agency</h3>
-            <div id="chart-agency-open" class="chart" role="img" aria-label="Open procurement vacancies by agency"></div>
-          </div>
-        </div>
-      </section>
-      <section id="vacancies">
-        <h2>Currently hiring</h2>
-        <p class="lede">Open roles in the population selected above. By default that is core procurement only. This table ignores the listing-status filter. A link can stop working after the posting closes.</p>
-        <div class="table-tools">
-          <label class="field">Search title or agency
-            <input id="table-search" type="search" placeholder="Search open roles">
-          </label>
-          <span id="table-count"></span>
         </div>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
-                <th><button type="button" data-sort="agency">Agency</button></th>
-                <th><button type="button" data-sort="jobTitle">Job title</button></th>
-                <th><button type="button" data-sort="sector">Sector</button></th>
-                <th><button type="button" data-sort="careerLevel">Career level</button></th>
+                <th><button type="button" data-sort="jobTitle">Role</button></th>
+                <th><button type="button" data-sort="open">Status</button></th>
+                <th><button type="button" data-sort="contractType">Contract</button></th>
+                <th><button type="button" data-sort="experienceMinYears">Min. years</button></th>
                 <th><button type="button" data-sort="postingDate">Posted</button></th>
-                <th><button type="button" data-sort="closingDate">Closing</button></th>
-                <th>Link</th>
+                <th><button type="button" data-sort="closingDate">Closes</button></th>
+                <th><span class="sr-only">Link</span></th>
               </tr>
             </thead>
-            <tbody id="vacancy-body"></tbody>
+            <tbody id="job-body"></tbody>
           </table>
         </div>
         <div class="pager">
@@ -167,43 +128,37 @@
           <button type="button" id="page-next" class="ghost">Next</button>
         </div>
       </section>
-      <section id="insights">
-        <h2>Implications for workforce planning</h2>
-        <p class="lede">Statements below are counted from the filtered postings. A change is described as an increase or decrease only when both periods have at least five postings and the gap is at least three. Otherwise the text says the volume is too small to interpret.</p>
-        <div class="insights" id="insight-list"></div>
-        <div class="card" style="margin-top:0.9rem">
-          <h3>Competencies mentioned</h3>
-          <p class="note">One posting can match several labels, so these counts will not add up to the number of postings. The labels follow public procurement activities. They are not the unpublished internal Procurement Competency Framework.</p>
-          <div id="chart-competency" class="chart short" role="img" aria-label="Competency mentions"></div>
-        </div>
-      </section>
-      <section id="definitions">
-        <h2>Definitions</h2>
-        <details class="help" open>
-          <summary>How a number on this page is produced</summary>
-          <dl>
-            <dt>Core procurement role</dt>
-            <dd>The title has a procurement term, or the source field or functional area is Procurement. This is the default population for every chart, card, and the open-roles table.</dd>
-            <dt>Duties-only match</dt>
-            <dd>The title and field are not procurement, but the duties contain a phrase such as “manage procurement” or “procurement of”. These roles are hidden until “Include roles matched only from the duties” is checked. A lone “tender” and “vendor” is still not enough, and “contract employee” stays excluded.</dd>
-            <dt>Sector</dt>
-            <dd>Keyword score on the title and duties. Agency name never assigns a sector. A tie or a weak score becomes Other / Unclassified.</dd>
-            <dt>Career level</dt>
-            <dd>Parsed from explicit years. Fresh-graduate language maps to entry level. One to three years, inside a narrow range, is early career. Four to seven is mid-career. Eight or more, including “8+ years”, is experienced. Ranges that cross those bands, and open-ended minima below eight years, stay broad.</dd>
-            <dt>Observed span</dt>
-            <dd>Days from the first snapshot that contained the posting to the last. A posting that drops off and returns keeps the original first-seen date, and the span includes the gap. The median is shown only when at least ten postings have left the extract.</dd>
-            <dt>Snapshot coverage</dt>
-            <dd>History begins at the first usable upstream snapshot. The trend does not plot earlier months. Roles already listed in that first month are excluded from the trend unless their posting date is also in that month.</dd>
-            <dt>Competencies</dt>
-            <dd>Editable phrase list aligned to public procurement stages. A posting may carry more than one label.</dd>
-          </dl>
-        </details>
-      </section>
+
+      <details class="help no-print" id="definitions">
+        <summary>How this is counted</summary>
+        <dl>
+          <dt>Procurement posting</dt>
+          <dd>The title has a procurement term, or the agency filed the role under the Procurement field. Roles that only mention procurement in the duties are left out unless that option is turned on.</dd>
+          <dt>First seen</dt>
+          <dd>The first daily snapshot that contained the posting. History starts on <span data-meta="coverageStart"></span>, so roles already open that day count from then, not from when they were posted.</dd>
+          <dt>New postings</dt>
+          <dd>Postings first seen in a period. In the first month of history, only roles also posted that month are counted, so the backlog open on day one is not drawn as a spike.</dd>
+          <dt>Open at end of period</dt>
+          <dd>Postings first seen on or before the last day of the period and still listed on that day. For the current period, the last processed day is used.</dd>
+          <dt>Quarters</dt>
+          <dd>Calendar quarters. A quarter is compared only when every day of it is inside the history. The current quarter is shown as “to date” and never compared. Year-on-year comparison turns on once a full quarter has a full quarter a year earlier, from <span data-meta="yoyAvailableFrom"></span>.</dd>
+          <dt>Increase or decrease</dt>
+          <dd>Called only when both periods have at least <span data-meta="comparisonMinCount"></span> postings and differ by at least <span data-meta="comparisonMinChange"></span> postings and <span data-meta="comparisonMinPercent"></span>%. Otherwise the text says “about the same” or “too few to compare”.</dd>
+          <dt>Closing soon</dt>
+          <dd>Open postings whose closing date is within <span data-meta="closingSoonDays"></span> days of the last processed day. Some postings have no closing date.</dd>
+          <dt>Contract type</dt>
+          <dd>Taken from the source employment type. Mapping is in <code>config/dashboard.yml</code>.</dd>
+          <dt>Minimum experience</dt>
+          <dd>The lowest years of experience stated on the posting, from the structured field or the requirement text.</dd>
+          <dt>Sources and limits</dt>
+          <dd>Public Careers@Gov postings republished by OpenGovSG. Postings that opened and closed between snapshots are missing. Links to closed postings can stop working. Matching is rule-based, not a model, and should be checked before it is used as a target.</dd>
+        </dl>
+      </details>
     </div>
   </main>
-  <footer>
+  <footer class="no-print">
     <div class="wrap">
-      Public Careers@Gov postings as republished by OpenGovSG. This site does not hold applicant or candidate information. Classification is a deterministic heuristic and should be checked before it is used as a workforce target.
+      Public Careers@Gov postings as republished by OpenGovSG. No applicant or candidate information is held.
     </div>
   </footer>
   <script src="assets/vendor/echarts.min.js"></script>

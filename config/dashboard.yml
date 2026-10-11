@@ -1,0 +1,48 @@
+# Rules for the dashboard summaries. Edit, then run:
+#   python -m scripts.rebuild_outputs
+
+# Source employment type -> label shown on the dashboard.
+# Matching is case-insensitive on the whole value. Anything else becomes "Other".
+contract_types:
+  - label: Permanent
+    values: [permanent]
+  - label: Permanent or contract
+    values: [permanent/contract]
+  - label: Fixed term
+    values: [fixed terms, fixed term]
+  - label: Contract
+    values: [contract, casual]
+  - label: Internship or traineeship
+    values: [internship, traineeship]
+contract_not_stated: Not stated
+contract_other: Other
+# Labels that offer no permanent route. Used for the "no permanent option" share.
+no_permanent_option: [Fixed term, Contract]
+
+# Bands for the stated minimum years of experience. max is inclusive; null means no ceiling.
+experience_bands:
+  - { label: "0 years", min: 0, max: 0 }
+  - { label: "1–2 years", min: 1, max: 2 }
+  - { label: "3–4 years", min: 3, max: 4 }
+  - { label: "5–7 years", min: 5, max: 7 }
+  - { label: "8+ years", min: 8, max: null }
+experience_not_stated: Not stated
+
+# An open posting closing within this many days counts as "closing soon".
+closing_soon_days: 7
+
+# A quarter-on-quarter or year-on-year change is called an increase or decrease
+# only when both periods have at least min_period_count postings, the
+# difference is at least min_change postings, and at least min_change_percent.
+comparison:
+  min_period_count: 5
+  min_change: 3
+  min_change_percent: 10
+
+# Rising or falling markers on keywords: both quarters need this many postings,
+# and the share must move by at least this many percentage points.
+keyword_trend:
+  min_quarter_postings: 10
+  min_change_points: 5
+
+top_agencies: 10

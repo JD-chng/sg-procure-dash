@@ -28,6 +28,3 @@ bootstrap_required_columns:
 internship_employment_types:
   - internship
   - traineeship
-insight_min_period_count: 5
-insight_min_change: 3
-median_min_sample: 10
