@@ -186,7 +186,7 @@ def write_keyword_files(
                     "jobTitle": record.get("jobTitle", ""),
                     "contractType": contract_of(record),
                     "employmentType": record.get("employmentType", ""),
-                    "experienceMinYears": record.get("experienceMinYears", ""),
+                    "experienceMinYears": record.get("experienceStatedMinYears", ""),
                     "postingDate": record.get("postingDate", ""),
                     "firstSeenDate": record.get("firstSeenDate", ""),
                     "lastSeenDate": record.get("lastSeenDate", ""),

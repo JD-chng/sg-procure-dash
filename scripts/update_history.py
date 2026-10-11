@@ -47,6 +47,7 @@ def blank_record() -> dict:
         "experienceMinYears": "",
         "experienceMaxYears": "",
         "experienceTextMatched": "",
+        "experienceStatedMinYears": "",
         "careerLevel": "",
         "pcfCompetencies": "",
         "pcfPrimary": "",

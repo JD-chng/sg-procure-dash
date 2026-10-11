@@ -1,9 +1,27 @@
-from scripts.classify_experience import classify_experience
+from scripts.classify_experience import classify_experience, stated_minimum_years
 from scripts.classify_sector import classify_sector
 from scripts.common import load_yaml
 
 RULES = load_yaml("experience_rules.yml")
 SECTORS = load_yaml("sector_taxonomy.yml")
+
+
+def stated(**kwargs):
+    defaults = {"experience_required": "", "years_min": "", "requirements": "", "description": "", "rules": RULES}
+    defaults.update(kwargs)
+    return stated_minimum_years(**defaults)
+
+
+def test_stated_minimum_takes_the_highest_floor_written():
+    assert stated(experience_required="00-08 year(s)", years_min="0", requirements="At least 3 years of relevant work experience") == 3
+    assert stated(experience_required="02-15 year(s)", years_min="2") == 2
+    assert stated(years_min="", requirements="Minimum 5 years in procurement") == 5
+
+
+def test_stated_minimum_respects_entry_level_and_ignores_agency_history():
+    assert stated(experience_required="Entry level", requirements="Candidates with at least 3 years may apply") == 0
+    assert stated(description="An agency with over 50 years of service.") is None
+    assert stated(requirements="Fresh graduates are welcome") == 0
 
 
 def level(**kwargs):

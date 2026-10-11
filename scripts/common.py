@@ -61,6 +61,7 @@ HISTORY_COLUMNS = [
     "experienceMinYears",
     "experienceMaxYears",
     "experienceTextMatched",
+    "experienceStatedMinYears",
     "careerLevel",
     "pcfCompetencies",
     "pcfPrimary",

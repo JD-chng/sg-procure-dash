@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from scripts.classify_experience import classify_experience
+from scripts.classify_experience import classify_experience, stated_minimum_years
 from scripts.classify_pcf import classify_pcf
 from scripts.classify_sector import classify_sector
 from scripts.identify_procurement import identify_procurement
@@ -76,6 +76,14 @@ def classify_records(records: dict[str, dict], configs: dict) -> dict:
             rules=configs["experience"],
         )
         record.update(experience)
+        stated = stated_minimum_years(
+            experience_required=record.get("experienceRequired", ""),
+            years_min=record.get("experienceYearsMin", ""),
+            requirements=record.get("requirements", ""),
+            description=record.get("description", ""),
+            rules=configs["experience"],
+        )
+        record["experienceStatedMinYears"] = "" if stated is None else str(stated)
         if experience["careerLevel"] == configs["experience"]["labels"]["broad"]:
             stats["careerBroad"] += 1
         elif experience["experienceTextMatched"] or experience["experienceMinYears"]:

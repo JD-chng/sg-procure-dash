@@ -88,6 +88,43 @@ def classify_experience(
     )
 
 
+MAX_PLAUSIBLE_MINIMUM = 20
+
+
+def stated_minimum_years(
+    *,
+    experience_required: str,
+    years_min: object,
+    requirements: str,
+    description: str,
+    rules: dict,
+) -> int | None:
+    """Highest minimum the posting states anywhere.
+
+    A posting with a structured 0-8 range and "at least 3 years" in the
+    requirements asks for 3. The description is read only when there are no
+    requirements, because it often describes the agency ("over 50 years").
+    """
+    if clean(experience_required).lower() == "entry level":
+        return 0
+    required = html_to_text(experience_required)
+    text = html_to_text(requirements) or html_to_text(description)
+    scan = " ".join(part for part in [text, required] if part)
+    candidates = [int(m.group(1)) for m in _AT_LEAST.finditer(scan)]
+    candidates += [int(m.group(1)) for m in _PLUS.finditer(scan)]
+    candidates += [int(m.group(1)) for m in _RANGE.finditer(scan)]
+    structured = to_int(years_min)
+    if structured is not None:
+        candidates.append(structured)
+    candidates = [value for value in candidates if 0 <= value <= MAX_PLAUSIBLE_MINIMUM]
+    if candidates:
+        return max(candidates)
+    lowered = scan.lower()
+    if any(phrase.lower() in lowered for phrase in rules.get("entry_phrases", [])):
+        return 0
+    return None
+
+
 def _range_label(years_min: int, years_max: int | None, rules: dict) -> str:
     labels = rules["labels"]
     bands = rules["bands"]

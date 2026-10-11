@@ -10,7 +10,7 @@ from scripts.keywords import Hit, Keyword
 
 def slim_job(record: dict, rules: dict, keyword_ids: list[str] | None = None) -> dict:
     first = parse_iso(record.get("firstSeenDate"))
-    min_years = _optional_int(record.get("experienceMinYears"))
+    min_years = _optional_int(record.get("experienceStatedMinYears"))
     in_trend = record.get("inTrend") == "true"
     return {
         "jobKey": record.get("job_key", ""),
