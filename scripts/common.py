@@ -162,6 +162,11 @@ def parse_iso(value: object) -> date | None:
     return parsed
 
 
+def parse_date_any(value: object) -> date | None:
+    """Read an ISO date or a source epoch timestamp."""
+    return parse_iso(value) or parse_epoch_ms(value)
+
+
 def to_int(value: object) -> int | None:
     text = clean(value)
     if not text:

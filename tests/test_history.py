@@ -52,6 +52,31 @@ def test_new_existing_and_disappeared_jobs_keep_one_row():
     assert gone["lastSeenDate"] == "2026-01-10"
 
 
+def test_source_timestamps_are_archived_as_plain_dates():
+    records = {}
+    apply_snapshot(records, [_row("1"), _row("2", closingDate="NaN")], date(2026, 1, 10))
+    record = records["hrp|1|p1"]
+    assert record["startDate"] == "2026-01-01"
+    assert record["postingDate"] == "2026-01-01"
+    assert record["closingDate"] == "2026-12-29"
+    assert records["hrp|2|p1"]["closingDate"] == ""
+
+
+def test_legacy_epoch_rows_are_converted_when_finalized():
+    record = {
+        "firstSeenDate": "2026-06-01",
+        "lastSeenDate": "2026-06-10",
+        "currentlyListed": "true",
+        "startDate": "1767225600000",
+        "closingDate": "1798502400000",
+        "postingDate": "2026-01-01",
+    }
+    finalize_records({"k": record}, date(2026, 6, 10), date(2026, 6, 1))
+    assert record["startDate"] == "2026-01-01"
+    assert record["closingDate"] == "2026-12-29"
+    assert record["daysUntilClosing"] == str((date(2026, 12, 29) - date(2026, 6, 10)).days)
+
+
 def test_relisted_job_keeps_first_seen_and_increments_relist_count():
     records = {}
     apply_snapshot(records, [_row("9")], date(2026, 2, 1))

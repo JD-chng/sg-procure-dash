@@ -10,7 +10,7 @@ from scripts.common import (
     job_url,
     make_job_key,
     month_key,
-    parse_epoch_ms,
+    parse_date_any,
     parse_iso,
     quarter_key,
 )
@@ -137,8 +137,8 @@ def _copy_source_fields(record: dict, row: dict) -> None:
     record["jobTitle"] = html_to_text(row.get("jobTitle"))
     record["agency"] = clean(row.get("agency"))
     record["employmentType"] = clean(row.get("employmentType"))
-    record["startDate"] = clean(row.get("startDate"))
-    record["closingDate"] = clean(row.get("closingDate"))
+    record["startDate"] = _iso_or_blank(row.get("startDate"))
+    record["closingDate"] = _iso_or_blank(row.get("closingDate"))
     record["experienceRequired"] = html_to_text(row.get("experienceRequired"))
     record["experienceYearsMin"] = clean(row.get("experienceYearsMin"))
     record["experienceYearsMax"] = clean(row.get("experienceYearsMax"))
@@ -149,15 +149,21 @@ def _copy_source_fields(record: dict, row: dict) -> None:
     record["responsibilities"] = html_to_text(row.get("jobResponsibilities"))
     record["requirements"] = html_to_text(row.get("jobRequirements"))
     record["sourceURL"] = job_url(record["platform"], record["jobId"], record["postingNo"])
-    posted = parse_epoch_ms(record["startDate"])
-    record["postingDate"] = posted.isoformat() if posted else ""
+    record["postingDate"] = record["startDate"]
+
+
+def _iso_or_blank(value: object) -> str:
+    parsed = parse_date_any(value)
+    return parsed.isoformat() if parsed else ""
 
 
 def _derive_dates(record: dict, run_date: date, coverage_start: date | None) -> None:
+    record["startDate"] = _iso_or_blank(record.get("startDate"))
+    record["closingDate"] = _iso_or_blank(record.get("closingDate"))
     first = parse_iso(record.get("firstSeenDate"))
     last = parse_iso(record.get("lastSeenDate"))
     posted = parse_iso(record.get("postingDate"))
-    closing = parse_epoch_ms(record.get("closingDate"))
+    closing = parse_iso(record.get("closingDate"))
     if posted:
         record["postingMonth"] = month_key(posted)
         record["postingQuarter"] = quarter_key(posted)
