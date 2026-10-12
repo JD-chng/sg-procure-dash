@@ -258,4 +258,4 @@ This project stands on the work of others:
 - **[pytest](https://pytest.org/)** (MIT License), for the automated tests.
 - **[GitHub Actions](https://docs.github.com/actions)** and **[GitHub Pages](https://pages.github.com/)**, which run the refresh and host the site at no cost.
 
-This project's own code does not have a licence yet. Until one is added, others may read the code but have no explicit permission to reuse it. If you want others to be able to reuse it, add a `LICENSE` file before publishing. MIT would match the dataset it builds on.
+This project's own code and documentation are released under the [MIT License](LICENSE). That licence does not cover the bundled ECharts file, which keeps its Apache License 2.0, or the job posting content, which belongs to the agencies that published it.
