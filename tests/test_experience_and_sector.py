@@ -1,4 +1,4 @@
-from scripts.classify_experience import classify_experience, stated_minimum_years
+from scripts.classify_experience import classify_experience, stated_minimum_with_evidence, stated_minimum_years
 from scripts.classify_sector import classify_sector
 from scripts.common import load_yaml
 
@@ -22,6 +22,15 @@ def test_stated_minimum_respects_entry_level_and_ignores_agency_history():
     assert stated(experience_required="Entry level", requirements="Candidates with at least 3 years may apply") == 0
     assert stated(description="An agency with over 50 years of service.") is None
     assert stated(requirements="Fresh graduates are welcome") == 0
+
+
+def test_stated_minimum_reports_where_it_was_found():
+    base = {"experience_required": "", "years_min": "", "requirements": "", "description": "", "rules": RULES}
+    years, found = stated_minimum_with_evidence(**{**base, "experience_required": "00-08 year(s)", "years_min": "0", "requirements": "At least 3 years of relevant work experience"})
+    assert years == 3 and found.startswith("Requirements: ") and "At least 3 years" in found
+    assert stated_minimum_with_evidence(**{**base, "experience_required": "05-10 year(s)", "years_min": "5"}) == (5, "Experience field: minimum 5 years")
+    assert stated_minimum_with_evidence(**{**base, "experience_required": "Entry level"}) == (0, "Experience field: Entry level")
+    assert stated_minimum_with_evidence(**base) == (None, "")
 
 
 def level(**kwargs):

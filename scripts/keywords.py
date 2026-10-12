@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-import csv
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from scripts.common import load_yaml, parse_date_any
+from scripts.io_store import write_listing_csv
 
 TEXT_FIELDS = {
     "title": "jobTitle",
@@ -200,7 +200,7 @@ def write_keyword_files(
                     "description": record.get("description", "") if "description" in hit.parts else "",
                 }
             )
-        _write_csv(directory / f"{keyword.id}.csv", CSV_COLUMNS, rows)
+        write_listing_csv(directory / f"{keyword.id}.csv", CSV_COLUMNS, rows)
         index_rows.append(
             {
                 "keyword_id": keyword.id,
@@ -215,19 +215,9 @@ def write_keyword_files(
                 "file": f"{keyword.id}.csv",
             }
         )
-    _write_csv(directory / "index.csv", INDEX_COLUMNS, index_rows)
+    write_listing_csv(directory / "index.csv", INDEX_COLUMNS, index_rows)
 
 
 def _iso(value: object) -> str:
     parsed = parse_date_any(value)
     return parsed.isoformat() if parsed else ""
-
-
-def _write_csv(path: Path, columns: list[str], rows: list[dict]) -> None:
-    temporary = path.with_suffix(".csv.partial")
-    # utf-8-sig so Excel opens accented and dash characters correctly.
-    with temporary.open("w", encoding="utf-8-sig", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=columns)
-        writer.writeheader()
-        writer.writerows(rows)
-    temporary.replace(path)

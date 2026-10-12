@@ -225,6 +225,8 @@ mark { background: #f6e2a9; color: inherit; padding: 0 0.05rem; border-radius: 2
 .pager { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.6rem; }
 
 .download-all { font-size: 0.86rem; }
+.file-links { margin: 0.35rem 0 0.1rem; font-size: 0.84rem; color: var(--muted); line-height: 1.7; }
+.file-links a { color: var(--accent); white-space: nowrap; }
 .kw-wrap { border-radius: 8px; margin: 0.3rem 0 0.4rem; }
 table.kw { font-size: 0.88rem; }
 table.kw th, table.kw td { padding: 0.32rem 0.6rem; vertical-align: middle; }

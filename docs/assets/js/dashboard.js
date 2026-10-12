@@ -194,6 +194,19 @@
       const value = meta[key];
       node.textContent = key === "coverageStart" ? fmtDate(value) : String(value == null ? "" : value);
     });
+    renderExperienceLinks();
+  }
+
+  function renderExperienceLinks() {
+    const files = meta.experienceFiles || {};
+    const counts = countBy(payload.jobs || [], (job) => job.experienceBand);
+    const links = (meta.experienceBands || [])
+      .filter((label) => files[label] && counts.get(label))
+      .map((label) => '<a href="' + escapeHtml(files[label]) + '" download>' + escapeHtml(label) + "</a>");
+    $("experience-lists").innerHTML = links.length
+      ? "Posting lists (CSV): " + links.join(' <span aria-hidden="true">·</span> ') +
+        ' <span aria-hidden="true">·</span> <a href="data/experience/index.csv" download>All bands</a>'
+      : "";
   }
 
   function renderScope(jobs) {

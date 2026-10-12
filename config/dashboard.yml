@@ -20,13 +20,15 @@ contract_other: Other
 no_permanent_option: [Fixed term, Contract]
 
 # Bands for the stated minimum years of experience. max is inclusive; null means no ceiling.
+# id names the band's posting list, docs/data/experience/<id>.csv.
 experience_bands:
-  - { label: "0 years", min: 0, max: 0 }
-  - { label: "1–2 years", min: 1, max: 2 }
-  - { label: "3–4 years", min: 3, max: 4 }
-  - { label: "5–7 years", min: 5, max: 7 }
-  - { label: "8+ years", min: 8, max: null }
+  - { id: 0-years, label: "0 years", min: 0, max: 0 }
+  - { id: 1-2-years, label: "1–2 years", min: 1, max: 2 }
+  - { id: 3-4-years, label: "3–4 years", min: 3, max: 4 }
+  - { id: 5-7-years, label: "5–7 years", min: 5, max: 7 }
+  - { id: 8-plus-years, label: "8+ years", min: 8, max: null }
 experience_not_stated: Not stated
+experience_not_stated_id: not-stated
 
 # An open posting closing within this many days counts as "closing soon".
 closing_soon_days: 7

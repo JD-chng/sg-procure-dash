@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date, timedelta
 
 from scripts.common import clean, load_yaml, month_key, parse_date_any, parse_iso, quarter_key
@@ -93,6 +94,32 @@ def experience_band(min_years: int | None, rules: dict) -> str:
         if (low is None or min_years >= low) and (high is None or min_years <= high):
             return band["label"]
     return rules.get("experience_not_stated", "Not stated")
+
+
+_BAND_ID = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def experience_lists(rules: dict) -> list[dict]:
+    """Every experience band, including "not stated", with its list file id."""
+    bands = [
+        {"id": band.get("id"), "label": band["label"], "min": band.get("min"), "max": band.get("max")}
+        for band in rules.get("experience_bands", [])
+    ]
+    bands.append(
+        {
+            "id": rules.get("experience_not_stated_id", "not-stated"),
+            "label": rules.get("experience_not_stated", "Not stated"),
+            "min": None,
+            "max": None,
+        }
+    )
+    ids = [band["id"] for band in bands]
+    for band in bands:
+        if not isinstance(band["id"], str) or not _BAND_ID.match(band["id"]):
+            raise ValueError(f"Experience band {band['label']!r} needs an id of lowercase letters, digits, and dashes.")
+    if len(set(ids)) != len(ids):
+        raise ValueError("Experience band ids must be unique.")
+    return bands
 
 
 def period_calendar(coverage_start: date | None, through: date | None) -> dict:
@@ -198,8 +225,8 @@ def build_payload(
     calendar = period_calendar(parse_iso(metadata.get("coverageStart")), parse_iso(metadata.get("processedThrough")))
     contract_labels = [item["label"] for item in rules.get("contract_types", [])]
     contract_labels += [rules.get("contract_other", "Other"), rules.get("contract_not_stated", "Not stated")]
-    band_labels = [band["label"] for band in rules.get("experience_bands", [])]
-    band_labels.append(rules.get("experience_not_stated", "Not stated"))
+    bands = experience_lists(rules)
+    band_labels = [band["label"] for band in bands]
     comparison = rules.get("comparison", {})
     keyword_trend = rules.get("keyword_trend", {})
     return {
@@ -209,6 +236,7 @@ def build_payload(
             "contractLabels": contract_labels,
             "noPermanentOption": rules.get("no_permanent_option", []),
             "experienceBands": band_labels,
+            "experienceFiles": {band["label"]: f"data/experience/{band['id']}.csv" for band in bands},
             "closingSoonDays": int(rules.get("closing_soon_days", 7)),
             "comparisonMinCount": int(comparison.get("min_period_count", 5)),
             "comparisonMinChange": int(comparison.get("min_change", 3)),

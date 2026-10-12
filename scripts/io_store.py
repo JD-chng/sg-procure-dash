@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 
@@ -49,6 +50,16 @@ def write_json(path: Path, payload: dict, *, compact: bool = False) -> None:
         else json.dumps(payload, ensure_ascii=False, indent=2)
     )
     temporary.write_text(text, encoding="utf-8")
+    temporary.replace(path)
+
+
+def write_listing_csv(path: Path, columns: list[str], rows: list[dict]) -> None:
+    temporary = path.with_suffix(".csv.partial")
+    # utf-8-sig so Excel opens accented and dash characters correctly.
+    with temporary.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(rows)
     temporary.replace(path)
 
 

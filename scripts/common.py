@@ -23,6 +23,7 @@ DOCS_DATA = ROOT / "docs" / "data" / "dashboard_data.json"
 DOCS_META = ROOT / "docs" / "data" / "metadata.json"
 DOCS_TEXT = ROOT / "docs" / "data" / "job_text.json"
 KEYWORD_DIR = ROOT / "docs" / "data" / "keywords"
+EXPERIENCE_DIR = ROOT / "docs" / "data" / "experience"
 
 SOURCE_URL = (
     "https://raw.githubusercontent.com/opengovsg/careersgovsg-jobs-data/"

@@ -105,24 +105,63 @@ def stated_minimum_years(
     requirements asks for 3. The description is read only when there are no
     requirements, because it often describes the agency ("over 50 years").
     """
+    return stated_minimum_with_evidence(
+        experience_required=experience_required,
+        years_min=years_min,
+        requirements=requirements,
+        description=description,
+        rules=rules,
+    )[0]
+
+
+def stated_minimum_with_evidence(
+    *,
+    experience_required: str,
+    years_min: object,
+    requirements: str,
+    description: str,
+    rules: dict,
+) -> tuple[int | None, str]:
+    """The stated minimum and a short note on where it was found."""
     if clean(experience_required).lower() == "entry level":
-        return 0
+        return 0, "Experience field: Entry level"
     required = html_to_text(experience_required)
-    text = html_to_text(requirements) or html_to_text(description)
+    requirement_text = html_to_text(requirements)
+    text_part = "Requirements" if requirement_text else "Description"
+    text = requirement_text or html_to_text(description)
     scan = " ".join(part for part in [text, required] if part)
-    candidates = [int(m.group(1)) for m in _AT_LEAST.finditer(scan)]
-    candidates += [int(m.group(1)) for m in _PLUS.finditer(scan)]
-    candidates += [int(m.group(1)) for m in _RANGE.finditer(scan)]
+    found = []
+    for pattern in (_AT_LEAST, _PLUS, _RANGE):
+        found += [(int(m.group(1)), m.start(), m.end()) for m in pattern.finditer(scan)]
+    found = [item for item in found if 0 <= item[0] <= MAX_PLAUSIBLE_MINIMUM]
     structured = to_int(years_min)
-    if structured is not None:
-        candidates.append(structured)
-    candidates = [value for value in candidates if 0 <= value <= MAX_PLAUSIBLE_MINIMUM]
-    if candidates:
-        return max(candidates)
+    if structured is not None and not 0 <= structured <= MAX_PLAUSIBLE_MINIMUM:
+        structured = None
+    best_text = max(found, key=lambda item: (item[0], -item[1])) if found else None
+    if structured is not None and (best_text is None or structured >= best_text[0]):
+        return structured, f"Experience field: minimum {structured} years"
+    if best_text is not None:
+        value, start, end = best_text
+        part = text_part if text and start < len(text) else "Experience field"
+        return value, f"{part}: {_snippet(scan, start, end)}"
     lowered = scan.lower()
-    if any(phrase.lower() in lowered for phrase in rules.get("entry_phrases", [])):
-        return 0
-    return None
+    phrase = next((p for p in rules.get("entry_phrases", []) if p.lower() in lowered), None)
+    if phrase:
+        return 0, f'Text says "{phrase}"'
+    return None, ""
+
+
+def _snippet(text: str, start: int, end: int, radius: int = 70) -> str:
+    left = max(0, start - radius)
+    right = min(len(text), end + radius)
+    if left:
+        space = text.find(" ", left, start)
+        left = space + 1 if space != -1 else left
+    if right < len(text):
+        space = text.rfind(" ", end, right)
+        right = space if space != -1 else right
+    body = text[left:right].strip()
+    return ("…" if left else "") + body + ("…" if right < len(text) else "")
 
 
 def _range_label(years_min: int, years_max: int | None, rules: dict) -> str:

@@ -12,6 +12,7 @@ from scripts.build_dashboard_data import (
     build_payload,
     build_text_payload,
     contract_type,
+    experience_lists,
     coverage_start_from,
     is_internship,
 )
@@ -20,6 +21,7 @@ from scripts.common import (
     DOCS_DATA,
     DOCS_META,
     DOCS_TEXT,
+    EXPERIENCE_DIR,
     HISTORY_CSV,
     KEYWORD_DIR,
     PROCESSED_CSV,
@@ -31,6 +33,7 @@ from scripts.common import (
     today_sgt,
 )
 from scripts.download_jobs import download_jobs
+from scripts.experience_files import write_experience_files
 from scripts.io_store import read_history, read_json, read_source_csv, write_history, write_json
 from scripts.keywords import load_keywords, match_record, write_keyword_files
 from scripts.update_history import apply_snapshot, finalize_records
@@ -144,6 +147,7 @@ def _write_outputs(
 ) -> None:
     keywords = load_keywords()
     rules = load_yaml("dashboard.yml")
+    experience_lists(rules)
     write_history(HISTORY_CSV, records)
     procurement_rows = {
         key: value
@@ -176,6 +180,14 @@ def _write_outputs(
         relevant,
         hits,
         keywords,
+        contract_of=lambda record: contract_type(record.get("employmentType"), rules),
+        internship_of=is_internship,
+    )
+    write_experience_files(
+        EXPERIENCE_DIR,
+        relevant,
+        dashboard_rules=rules,
+        experience_rules=load_yaml("experience_rules.yml"),
         contract_of=lambda record: contract_type(record.get("employmentType"), rules),
         internship_of=is_internship,
     )

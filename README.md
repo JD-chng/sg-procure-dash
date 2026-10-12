@@ -30,6 +30,7 @@ Careers@Gov
   -> docs/data/dashboard_data.json   numbers and tags for the page
   -> docs/data/job_text.json         full posting text, loaded on demand
   -> docs/data/keywords/*.csv        one cross-reference list per keyword
+  -> docs/data/experience/*.csv      one list per minimum-experience band
   -> GitHub Pages
 ```
 
@@ -139,6 +140,8 @@ Quarters are calendar quarters. A quarter is compared only when every day of it 
 ### Minimum experience
 
 `experienceStatedMinYears` is the highest minimum the posting states anywhere: “at least 3 years” in the requirements outranks a structured 0–8 range. The description is read only when the requirements are empty, values above 20 are ignored (“over 50 years of service”), and a posting labelled Entry level counts as 0.
+
+Each band in `config/dashboard.yml` (`experience_bands`, plus “Not stated”) has a list at `docs/data/experience/<id>.csv`, linked under the experience chart. It holds every procurement posting in the band, open and closed, with the minimum years, `foundIn` (the experience field or a quoted line from the requirements that gave the figure), the agency's structured experience field, contract type, dates, the posting link, and the full requirements. `docs/data/experience/index.csv` lists the bands and their counts. A new or renamed band needs a unique `id`.
 
 ### Procurement relevance
 
@@ -253,6 +256,7 @@ data/historical/         persistent posting table and source checksum
 data/processed/          procurement rows only
 docs/                    static site published by GitHub Pages
 docs/data/keywords/      one CSV per keyword, plus index.csv
+docs/data/experience/    one CSV per minimum-experience band, plus index.csv
 tests/                   parser, history, and validation tests
 .github/workflows/       weekday refresh and Pages deploy
 ```
