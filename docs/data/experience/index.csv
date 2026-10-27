@@ -1,7 +1,7 @@
 ﻿band_id,label,min_years,max_years,postings_all,postings_core,open_core,file
-0-years,0 years,0,0,258,130,11,0-years.csv
+0-years,0 years,0,0,260,130,11,0-years.csv
 1-2-years,1–2 years,1,2,242,101,7,1-2-years.csv
-3-4-years,3–4 years,3,4,386,99,6,3-4-years.csv
+3-4-years,3–4 years,3,4,387,99,6,3-4-years.csv
 5-7-years,5–7 years,5,7,283,88,10,5-7-years.csv
-8-plus-years,8+ years,8,,122,38,4,8-plus-years.csv
+8-plus-years,8+ years,8,,122,38,3,8-plus-years.csv
 not-stated,Not stated,,,0,0,0,not-stated.csv
