@@ -1,20 +1,20 @@
 ﻿keyword_id,group,label,generic,searched_in,patterns,postings_all,postings_core,open_core,file
-tender-rfq,Procurement process,Tender / RFQ / quotation,no,title; responsibilities; requirements; description,\btenders?\b | \btendering\b | \brfqs?\b | \bquotations?\b | \binvitation to quote\b,536,247,19,tender-rfq.csv
-contract-management,Procurement process,Contract management,no,title; responsibilities; requirements; description,"\bcontracts? management\b | \bcontract administration\b | \bmanag\w* (?:\w+ ){0,2}contracts\b",451,220,21,contract-management.csv
-negotiation,Procurement process,Negotiation,no,title; responsibilities; requirements; description,\bnegotiat\w*,139,40,3,negotiation.csv
+tender-rfq,Procurement process,Tender / RFQ / quotation,no,title; responsibilities; requirements; description,\btenders?\b | \btendering\b | \brfqs?\b | \bquotations?\b | \binvitation to quote\b,539,247,18,tender-rfq.csv
+contract-management,Procurement process,Contract management,no,title; responsibilities; requirements; description,"\bcontracts? management\b | \bcontract administration\b | \bmanag\w* (?:\w+ ){0,2}contracts\b",454,221,22,contract-management.csv
+negotiation,Procurement process,Negotiation,no,title; responsibilities; requirements; description,\bnegotiat\w*,140,40,3,negotiation.csv
 strategic-sourcing,Procurement process,Strategic sourcing,no,title; responsibilities; requirements; description,\bstrategic (?:sourcing|procurement)\b,54,35,3,strategic-sourcing.csv
-supplier-management,Procurement process,Supplier / vendor management,no,title; responsibilities; requirements; description,\b(?:supplier|vendor)s? (?:performance|management|relationships?|evaluation)\b,211,37,5,supplier-management.csv
+supplier-management,Procurement process,Supplier / vendor management,no,title; responsibilities; requirements; description,\b(?:supplier|vendor)s? (?:performance|management|relationships?|evaluation)\b,211,37,4,supplier-management.csv
 category-management,Procurement process,Category management,no,title; responsibilities; requirements; description,\bcategory management\b | \bcategory (?:manager|strategy|strategies|plans?)\b,26,26,4,category-management.csv
-gebiz,Systems and tools,GeBIZ,no,title; responsibilities; requirements; description,\bgebiz\b,184,146,15,gebiz.csv
-data-analytics,Systems and tools,Data analytics / dashboards,no,title; responsibilities; requirements; description,\bdata analytics\b | \banalytics\b | \bpower ?bi\b | \btableau\b | \bdashboards?\b | \bspend analysis\b,315,134,12,data-analytics.csv
-excel,Systems and tools,Excel,no,title; responsibilities; requirements; description,\bexcel\b,143,38,2,excel.csv
+gebiz,Systems and tools,GeBIZ,no,title; responsibilities; requirements; description,\bgebiz\b,184,146,14,gebiz.csv
+data-analytics,Systems and tools,Data analytics / dashboards,no,title; responsibilities; requirements; description,\bdata analytics\b | \banalytics\b | \bpower ?bi\b | \btableau\b | \bdashboards?\b | \bspend analysis\b,317,135,13,data-analytics.csv
+excel,Systems and tools,Excel,no,title; responsibilities; requirements; description,\bexcel\b,144,38,2,excel.csv
 sap-erp,Systems and tools,SAP / ERP,no,title; responsibilities; requirements; description,\bsap\b | \berp\b,39,24,2,sap-erp.csv
 sustainability,Governance and priorities,Sustainability / green procurement,no,title; responsibilities; requirements; description,(?<!fiscal )(?<!financial )(?<!solution )\bsustainability\b | \bsustainable (?:procurement|purchasing|sourcing|development|practices)\b | \benvironmental(?:ly)? (?:sustainab\w*|friendly|impact|considerations)\b | \bgreen (?:public )?(?:procurement|government|plan|buildings?|technolog\w*)\b | \b(?:carbon|net[- ]zero|climate|decarboni[sz]\w*)\b,129,29,3,sustainability.csv
 value-for-money,Governance and priorities,Value for money / cost savings,no,title; responsibilities; requirements; description,\bvalue for money\b | \bcost (?:savings?|reductions?|avoidance)\b,68,45,5,value-for-money.csv
-audit-compliance,Governance and priorities,Audit and compliance,yes,responsibilities; requirements,\baudits?\b | \bcompliance\b,695,253,24,audit-compliance.csv
+audit-compliance,Governance and priorities,Audit and compliance,yes,responsibilities; requirements,\baudits?\b | \bcompliance\b,700,254,24,audit-compliance.csv
 construction-works,What they buy,Construction / works,no,title; responsibilities; requirements; description,\bconstruction\b | \bbuilding works\b | \bcivil (?:works|engineering)\b,160,65,7,construction-works.csv
-ict-technology,What they buy,ICT / technology,no,title; responsibilities; requirements; description,\bict\b | \bsoftware\b | \bcloud\b | \bcyber\w* | \bit (?:systems|services|products|procurement)\b,336,28,3,ict-technology.csv
-degree,Qualifications,Degree,yes,requirements,\bdegree\b | \bbachelor\w*,190,63,3,degree.csv
-cips-certification,Qualifications,CIPS / professional certification,yes,requirements,"\bm?cips\b | \bcpsm\b | \bcpm\b | \bprofessional (?:\w+ ){0,2}certifi\w* | \bprocurement certifi\w*",60,11,2,cips-certification.csv
+ict-technology,What they buy,ICT / technology,no,title; responsibilities; requirements; description,\bict\b | \bsoftware\b | \bcloud\b | \bcyber\w* | \bit (?:systems|services|products|procurement)\b,339,29,4,ict-technology.csv
+degree,Qualifications,Degree,yes,requirements,\bdegree\b | \bbachelor\w*,192,64,3,degree.csv
+cips-certification,Qualifications,CIPS / professional certification,yes,requirements,"\bm?cips\b | \bcpsm\b | \bcpm\b | \bprofessional (?:\w+ ){0,2}certifi\w* | \bprocurement certifi\w*",62,11,2,cips-certification.csv
 diploma,Qualifications,Diploma,yes,requirements,\bdiploma\b,41,7,0,diploma.csv
-stakeholder-management,People skills,Stakeholder management,yes,responsibilities; requirements,"\bstakeholder (?:management|engagement|relations\w*)\b | \b(?:engag|manag|liais|collaborat)\w* (?:closely )?(?:with )?(?:\w+ ){0,4}stakeholders\b",596,201,14,stakeholder-management.csv
+stakeholder-management,People skills,Stakeholder management,yes,responsibilities; requirements,"\bstakeholder (?:management|engagement|relations\w*)\b | \b(?:engag|manag|liais|collaborat)\w* (?:closely )?(?:with )?(?:\w+ ){0,4}stakeholders\b",598,202,14,stakeholder-management.csv
